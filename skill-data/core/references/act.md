@@ -44,6 +44,8 @@ The decider sees the value key names, never the values. It chooses which key goe
 
 The result also includes `operation`, `target`, `valueKey`, `confidence`, `probabilities`, `fingerprint`, `candidateCount`, `candidatesTruncated`, and `timings` (capture, decide, fresh check, action, and total milliseconds), which shows where each step spent its time. A blocked result includes `reason` when the chosen operation needs a target or value that was not offered.
 
+`fingerprint` covers the URL and the offered candidates, not their position. Animated pages move elements on almost every frame, so position would turn every decision stale. The action re-resolves the chosen ref against the live page before it runs instead. When a hover overlay covers the chosen control, such as a navigation flyout that opened while the decision was made, `act` parks the pointer and retries the same click once.
+
 ## Candidates
 
 Only rendered, actionable elements are offered: link, button, textbox, searchbox, combobox, checkbox, radio, option, menuitem, and tab. Elements outside the viewport are included because an action scrolls the chosen ref into view before it runs. The list offers in-viewport elements first, keeps DOM order within each group, and stops at 80 elements. `candidatesTruncated` reports when the cap dropped any. To narrow the list, snapshot a region with `snapshot -s <selector>` or scroll first.

@@ -7542,7 +7542,7 @@ pub(crate) async fn capture_act_page(state: &DaemonState) -> Result<ActPage, Str
     }
 
     let set = super::decide::assemble_candidates(&inputs, &rendered, super::decide::MAX_CANDIDATES);
-    let fingerprint = super::decide::fingerprint(&url, &set.candidates, &rect_by_key);
+    let fingerprint = super::decide::fingerprint(&url, &set.candidates);
 
     Ok(ActPage {
         url,
@@ -7631,6 +7631,36 @@ fn act_result(
         "timings": timing.to_json(),
         "result": action_result,
     })
+}
+
+/// Move the pointer to the middle of the viewport so a hover overlay under the
+/// previous pointer position can close before a retried click.
+async fn park_pointer_for_retry(state: &mut DaemonState) -> Result<(), String> {
+    let (x, y) = {
+        let mgr = state.browser.as_ref().ok_or("Browser not launched")?;
+        let session_id = mgr.active_session_id()?.to_string();
+        let result: Value = mgr
+            .client
+            .send_command(
+                "Runtime.evaluate",
+                Some(json!({
+                    "expression": "[window.innerWidth, window.innerHeight]",
+                    "returnByValue": true,
+                })),
+                Some(&session_id),
+            )
+            .await?;
+        let size = result
+            .get("result")
+            .and_then(|r| r.get("value"))
+            .cloned()
+            .unwrap_or(Value::Null);
+        let width = size.get(0).and_then(Value::as_f64).unwrap_or(800.0);
+        let height = size.get(1).and_then(Value::as_f64).unwrap_or(600.0);
+        (width / 2.0, height / 2.0)
+    };
+    handle_mousemove(&json!({ "x": x, "y": y }), state).await?;
+    Ok(())
 }
 
 /// A blocked result for a precondition that failed before any decision existed.
@@ -7860,7 +7890,23 @@ pub(crate) async fn handle_act_with(
     };
 
     let action_started = std::time::Instant::now();
-    let action_result = run_act_subcommand(sub_action, state).await?;
+    let action_result = match run_act_subcommand(sub_action.clone(), state).await {
+        Ok(result) => result,
+        // A hover overlay can open under the pointer while the decision is
+        // made, which leaves the chosen control covered. That is common on
+        // sites whose navigation opens a flyout on hover. Park the pointer in
+        // the middle of the page, let the overlay close, then try the same ref
+        // once more.
+        Err(error)
+            if decision.operation == super::decide::Operation::Click
+                && error.contains("is covered by") =>
+        {
+            park_pointer_for_retry(state).await?;
+            tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+            run_act_subcommand(sub_action, state).await?
+        }
+        Err(error) => return Err(error),
+    };
     timing.action_ms = action_started.elapsed().as_millis() as u64;
     timing.total_ms = started.elapsed().as_millis() as u64;
     if let Some(pending) = action_result.get("confirmation_id").cloned() {

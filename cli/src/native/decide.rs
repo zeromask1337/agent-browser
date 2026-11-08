@@ -450,11 +450,18 @@ pub fn assemble_candidates(
     }
 }
 
-/// Hash of the URL plus candidate identity and geometry at decision time.
+/// Hash of the URL plus candidate identity at decision time.
 ///
 /// A change means the page moved under the decision, so the caller decides
 /// once more and then reports `stale` instead of acting on a stale ref.
-pub fn fingerprint(url: &str, candidates: &[Candidate], visible: &HashMap<String, Rect>) -> String {
+///
+/// Geometry is deliberately excluded. Animated pages (carousels, rotating
+/// banners, sticky headers) shift candidate rectangles on almost every frame,
+/// which made every decision stale on real sites such as Amazon. Element
+/// position does not need to be in the hash: the action re-resolves the ref
+/// against the live page and clicks the element's current center, and the
+/// click reports a covered or missing target.
+pub fn fingerprint(url: &str, candidates: &[Candidate]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(url.as_bytes());
     for candidate in candidates {
@@ -464,15 +471,8 @@ pub fn fingerprint(url: &str, candidates: &[Candidate], visible: &HashMap<String
         hasher.update(candidate.role.as_bytes());
         hasher.update(b"\x1f");
         hasher.update(candidate.name.as_bytes());
-        if let Some(rect) = visible.get(&candidate.key) {
-            hasher.update(
-                format!(
-                    "\x1f{:.0},{:.0},{:.0},{:.0}",
-                    rect.x, rect.y, rect.width, rect.height
-                )
-                .as_bytes(),
-            );
-        }
+        hasher.update(b"\x1f");
+        hasher.update(candidate.nth.unwrap_or(0).to_string().as_bytes());
     }
     let digest = hasher.finalize();
     hex::encode(&digest[..8])
@@ -2779,27 +2779,22 @@ mod tests {
     }
 
     #[test]
-    fn fingerprint_changes_when_geometry_changes() {
+    fn fingerprint_tracks_url_and_candidate_identity_only() {
         let candidates = input().candidates;
         let mut first = rects(&["e1", "e2"]);
-        let before = fingerprint("https://example.com", &candidates, &first);
+        let before = fingerprint("https://example.com", &candidates);
         assert_eq!(
             before,
-            fingerprint("https://example.com", &candidates, &first),
+            fingerprint("https://example.com", &candidates),
             "fingerprint must be stable"
         );
+        // Animated pages move rects every frame; that must not invalidate a
+        // decision, because the action re-resolves the element position.
         first.get_mut("e1").unwrap().y += 40.0;
+        assert_eq!(before, fingerprint("https://example.com", &candidates));
         assert_ne!(
             before,
-            fingerprint("https://example.com", &candidates, &first)
-        );
-        assert_ne!(
-            before,
-            fingerprint(
-                "https://example.com/other",
-                &candidates,
-                &rects(&["e1", "e2"])
-            )
+            fingerprint("https://example.com/other", &candidates)
         );
     }
 
