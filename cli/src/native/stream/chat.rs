@@ -380,6 +380,7 @@ const ALLOWED_COMMANDS: &[&str] = &[
     "back",
     "forward",
     "reload",
+    "act",
     "click",
     "dblclick",
     "fill",
