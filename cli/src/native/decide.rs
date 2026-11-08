@@ -379,6 +379,11 @@ pub struct CandidateInput {
     /// A combobox is click-activatable only in this case: it is used as a
     /// button, not as a value field.
     pub opens_menu: bool,
+    /// True when the element intersects the viewport at probe time. Used only
+    /// to rank candidates before the cap: the top of a long page is what the
+    /// caller is looking at, so a visible control is offered before a rendered
+    /// one that needs a scroll. Offscreen refs stay eligible.
+    pub in_viewport: bool,
 }
 
 /// Viewport-relative rectangle in CSS pixels.
@@ -416,8 +421,18 @@ pub fn assemble_candidates(
         .filter(|input| rendered.contains_key(&input.key))
         .collect();
 
-    let truncated = actionable.len() > cap;
-    let candidates = actionable
+    // Offer what the caller can see first. A long page often has its target in
+    // the viewport while earlier DOM controls are only announced to screen
+    // readers or scrolled away, and the cap would otherwise drop the target.
+    // Offscreen rendered refs stay eligible after the visible ones because an
+    // action scrolls the chosen ref into view.
+    let (mut in_viewport, mut offscreen): (Vec<&CandidateInput>, Vec<&CandidateInput>) =
+        actionable.into_iter().partition(|input| input.in_viewport);
+    in_viewport.append(&mut offscreen);
+    let ordered = in_viewport;
+
+    let truncated = ordered.len() > cap;
+    let candidates = ordered
         .into_iter()
         .take(cap)
         .map(|input| Candidate {
@@ -473,6 +488,8 @@ pub struct RenderedElement {
     /// True when the element opens a popup menu rather than a listbox. This
     /// tells a combobox used as a button from a combobox used as a value field.
     pub opens_menu: bool,
+    /// True when the element intersects the viewport at probe time.
+    pub in_viewport: bool,
 }
 
 /// Read every element's viewport rectangle and disabled state in one page
@@ -523,7 +540,13 @@ pub async fn probe_rendered_elements(
             opensMenu = (el.tagName || '').toUpperCase() === 'BUTTON' ||
                 popup === 'menu' || popup === 'dialog' || popup === 'tree' || popup === 'grid';
         }
-        out.push({ x: r.x, y: r.y, w: r.width, h: r.height, rendered: rendered, disabled: disabled, opensMenu: opensMenu });
+        // Intersects the visible viewport. Rendered but offscreen elements stay
+        // eligible; this only ranks them behind what the caller can see.
+        var vw = window.innerWidth || 0;
+        var vh = window.innerHeight || 0;
+        var inViewport = rendered && r.width > 0 && r.height > 0 &&
+            r.right > 0 && r.bottom > 0 && r.x < vw && r.y < vh;
+        out.push({ x: r.x, y: r.y, w: r.width, h: r.height, rendered: rendered, disabled: disabled, opensMenu: opensMenu, inViewport: inViewport });
     }
     return out;
 })()
@@ -609,6 +632,10 @@ fn collect_tagged_elements(node: &Value, rects: &[Value], out: &mut HashMap<i64,
                                 .get("opensMenu")
                                 .and_then(|v| v.as_bool())
                                 .unwrap_or(false),
+                            in_viewport: rect
+                                .get("inViewport")
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(false),
                         },
                     );
                 }
@@ -639,6 +666,7 @@ pub fn candidate_inputs(ref_map: &super::element::RefMap) -> Vec<CandidateInput>
             frame_id: entry.frame_id,
             disabled: false,
             opens_menu: false,
+            in_viewport: false,
         })
         .collect()
 }
@@ -1846,6 +1874,7 @@ mod tests {
             frame_id: None,
             disabled: false,
             opens_menu: false,
+            in_viewport: false,
         }
     }
 
@@ -2016,6 +2045,30 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec!["e1", "e2"]
         );
+    }
+
+    #[test]
+    fn candidates_offer_in_viewport_controls_before_earlier_offscreen_ones() {
+        // A long page can put screen-reader-only or scrolled-away controls at
+        // the top of the DOM while the caller's target sits in the viewport.
+        // The cap must not drop the visible control.
+        let mut onscreen = candidate("e3", "searchbox", "Search Amazon", None);
+        onscreen.in_viewport = true;
+        let inputs = vec![
+            candidate("e1", "link", "Search, option, forward slash", None),
+            candidate("e2", "link", "Skip to main content", None),
+            onscreen,
+        ];
+        let visible = rects(&["e1", "e2", "e3"]);
+        let set = assemble_candidates(&inputs, &visible, 1);
+        assert_eq!(
+            set.candidates
+                .iter()
+                .map(|candidate| candidate.key.as_str())
+                .collect::<Vec<_>>(),
+            vec!["e3"]
+        );
+        assert!(set.truncated);
     }
 
     #[test]
