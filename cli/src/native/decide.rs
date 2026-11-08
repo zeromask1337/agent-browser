@@ -146,7 +146,7 @@ fn operation_criteria(include_wait: bool) -> Value {
     );
     criteria.insert(
         "back".to_string(),
-        json!("Go back to the previous page in browser history. Choose back for an instruction about the page before this one, even when the page also shows a link or button named Previous page."),
+        json!("Go back to the previous page in browser history. Choose back when the instruction refers to the page before this one, the page it came from, or where it was, and does not name a visible control. When the instruction names a Back, Return, or Previous control, click that control instead."),
     );
     if include_wait {
         criteria.insert(
