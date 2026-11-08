@@ -7584,6 +7584,28 @@ async fn decide_for_page(
         .map_err(|error| error.message())
 }
 
+/// Wall-clock time spent in each phase of one `act` step.
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct ActTiming {
+    pub(crate) capture_ms: u64,
+    pub(crate) decide_ms: u64,
+    pub(crate) fresh_check_ms: u64,
+    pub(crate) action_ms: u64,
+    pub(crate) total_ms: u64,
+}
+
+impl ActTiming {
+    fn to_json(&self) -> Value {
+        json!({
+            "captureMs": self.capture_ms,
+            "decideMs": self.decide_ms,
+            "freshCheckMs": self.fresh_check_ms,
+            "actionMs": self.action_ms,
+            "totalMs": self.total_ms,
+        })
+    }
+}
+
 fn act_result(
     status: &str,
     decision: &super::decide::Decision,
@@ -7592,6 +7614,7 @@ fn act_result(
     dry_run: bool,
     decider: &dyn super::decide::Decider,
     action_result: Option<Value>,
+    timing: &ActTiming,
 ) -> Value {
     json!({
         "status": status,
@@ -7605,6 +7628,7 @@ fn act_result(
         "decider": decider.name(),
         "candidateCount": page.candidates.len(),
         "candidatesTruncated": page.truncated,
+        "timings": timing.to_json(),
         "result": action_result,
     })
 }
@@ -7615,6 +7639,7 @@ fn act_blocked_without_decision(
     reason: &str,
     dry_run: bool,
     decider: &dyn super::decide::Decider,
+    timing: &ActTiming,
 ) -> Value {
     json!({
         "status": "blocked",
@@ -7628,6 +7653,7 @@ fn act_blocked_without_decision(
         "decider": decider.name(),
         "candidateCount": page.candidates.len(),
         "candidatesTruncated": page.truncated,
+        "timings": timing.to_json(),
         "result": Value::Null,
         "reason": reason,
     })
@@ -7680,19 +7706,26 @@ pub(crate) async fn handle_act_with(
         }
     }
 
+    let started = std::time::Instant::now();
+    let mut timing = ActTiming::default();
     let mut page = capture_act_page(state).await?;
+    timing.capture_ms = started.elapsed().as_millis() as u64;
     if page.candidates.is_empty() {
+        timing.total_ms = started.elapsed().as_millis() as u64;
         return Ok(act_blocked_without_decision(
             &page,
             "No rendered actionable candidates were offered. Run snapshot to refresh refs, then try again.",
             dry_run,
             decider,
+            &timing,
         ));
     }
 
     let mut decision = decide_for_page(&page, &instruction, &values, decider).await?;
+    timing.decide_ms = started.elapsed().as_millis() as u64 - timing.capture_ms;
 
     // Fresh-page check: decide once more if the page moved, then give up.
+    let fresh_started = std::time::Instant::now();
     let after = capture_act_page(state).await?;
     if after.fingerprint != page.fingerprint {
         decision = decide_for_page(&after, &instruction, &values, decider).await?;
@@ -7706,12 +7739,15 @@ pub(crate) async fn handle_act_with(
                 dry_run,
                 decider,
                 None,
+                &timing,
             ));
         }
         page = final_page;
     } else {
         page = after;
     }
+    timing.fresh_check_ms = fresh_started.elapsed().as_millis() as u64;
+    timing.total_ms = started.elapsed().as_millis() as u64;
 
     let value_key = decision.value_key.clone();
     let needs_target = decision.operation.needs_target();
@@ -7736,6 +7772,7 @@ pub(crate) async fn handle_act_with(
                 dry_run,
                 decider,
                 None,
+                &timing,
             );
             if let Some(reason) = decision.blocked_reason.as_deref() {
                 result["reason"] = json!(reason);
@@ -7743,6 +7780,7 @@ pub(crate) async fn handle_act_with(
             return Ok(result);
         }
         super::decide::ProposalOutcome::BelowThreshold => {
+            timing.total_ms = started.elapsed().as_millis() as u64;
             return Ok(act_result(
                 "blocked",
                 &decision,
@@ -7751,9 +7789,11 @@ pub(crate) async fn handle_act_with(
                 dry_run,
                 decider,
                 None,
+                &timing,
             ));
         }
         super::decide::ProposalOutcome::DryRun => {
+            timing.total_ms = started.elapsed().as_millis() as u64;
             return Ok(act_result(
                 "dry_run",
                 &decision,
@@ -7762,6 +7802,7 @@ pub(crate) async fn handle_act_with(
                 true,
                 decider,
                 None,
+                &timing,
             ));
         }
         super::decide::ProposalOutcome::Stale
@@ -7818,7 +7859,10 @@ pub(crate) async fn handle_act_with(
         super::decide::Operation::Wait => json!({ "id": id, "action": "wait", "timeout": 500 }),
     };
 
+    let action_started = std::time::Instant::now();
     let action_result = run_act_subcommand(sub_action, state).await?;
+    timing.action_ms = action_started.elapsed().as_millis() as u64;
+    timing.total_ms = started.elapsed().as_millis() as u64;
     if let Some(pending) = action_result.get("confirmation_id").cloned() {
         let mut result = act_result(
             "blocked",
@@ -7828,6 +7872,7 @@ pub(crate) async fn handle_act_with(
             false,
             decider,
             Some(action_result),
+            &timing,
         );
         result["confirmation_required"] = json!(true);
         result["confirmation_id"] = pending;
@@ -7841,6 +7886,7 @@ pub(crate) async fn handle_act_with(
         false,
         decider,
         Some(action_result),
+        &timing,
     ))
 }
 
