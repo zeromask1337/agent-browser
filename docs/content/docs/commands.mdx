@@ -173,7 +173,7 @@ agent-browser act "Click Submit" --min-confidence 0.8
 
 Set `AGENT_BROWSER_DECIDER` to `jev` or `llm`. There is no auto-selection. `jev` requires `TYPESAFE_API_KEY`; `llm` uses the same AI Gateway key as `chat`.
 
-The result reports `status`, `operation`, `target`, `valueKey`, `confidence`, `probabilities`, and `fingerprint`. Status is `executed`, `blocked`, or `stale`; `dry_run` is reported when no action ran. When the chosen operation needs a target or value that was not offered, or the chosen target's role cannot carry out the chosen operation, status is `blocked` and `reason` explains why. Nothing runs in that case, and a role mismatch is not retried as an invalid answer. The target ref is checked again before it runs. If the page changed after the decision, `act` decides once more; if it changed again, it returns `stale` and runs nothing.
+The result reports `status`, `operation`, `target`, `valueKey`, `confidence`, `probabilities`, and `fingerprint`. Status is `executed`, `blocked`, or `stale`; `dry_run` is reported when no action ran. When the chosen operation needs a target or value that was not offered, or the chosen target's role cannot carry out the chosen operation, status is `blocked` and `reason` explains why. Nothing runs in that case, and a role mismatch gets one corrective retry before it is blocked. The target ref is checked again before it runs. If the page changed after the decision, `act` decides once more; if it changed again, it returns `stale` and runs nothing.
 
 ## Wait
 

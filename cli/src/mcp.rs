@@ -1239,7 +1239,7 @@ fn parity_tools() -> Vec<Value> {
         tool(
             TOOL_ACT,
             "Act",
-            "Ask a decider to pick one operation and one rendered target from the current snapshot, then run it. Operations are click, fill, select, scroll_down, scroll_up, back, and wait; there is no done step. Requires a snapshot first. Elements outside the viewport are included because an action scrolls the chosen ref into view. If the decision needs a target or value that was not offered, or the chosen target's role cannot carry out the operation, it returns status blocked with a reason. The decider never sees input values, cookies, storage, or auth vault entries.",
+            "Ask a decider to pick one operation and one rendered target from the current snapshot, then run it. Operations are click, fill, select, scroll_down, scroll_up, back, and wait; there is no done step. Requires a snapshot first. Elements outside the viewport are included because an action scrolls the chosen ref into view. If the decision needs a target or value that was not offered, or the chosen target's role cannot carry out the operation, it returns status blocked with a reason; a role mismatch gets one corrective retry first. The decider never sees input values, cookies, storage, or auth vault entries.",
             json!({
                 "instruction": { "type": "string", "description": "One step, such as 'Click Sign in'." },
                 "dryRun": { "type": "boolean", "default": false, "description": "Return the proposal without running it." },

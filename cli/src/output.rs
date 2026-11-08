@@ -2260,7 +2260,8 @@ re-validated against the page before it runs; if the page moved twice, act
 returns status stale and runs nothing. If the decision needs a target or value
 that was not offered, or the chosen target's role cannot carry out the chosen
 operation, act returns status blocked with a reason and runs nothing. A target
-role mismatch is blocked, never retried as an invalid answer.
+role mismatch gets one corrective retry, then returns blocked rather than an
+error.
 
 Options:
   --dry-run              Return the proposal without running it

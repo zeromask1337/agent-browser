@@ -250,6 +250,17 @@ fn instruction_requests_history_back(instruction: &str) -> bool {
         .any(|cue| contains_word_sequence(&words, cue))
 }
 
+/// Whether this input is a history request. A back-like control that the
+/// instruction names by accessible name is an explicit click target, as in
+/// pagination ("previous page of results"), so it keeps the target head.
+fn history_back_is_requested(input: &DecisionInput) -> bool {
+    instruction_requests_history_back(&input.instruction)
+        && !input.candidates.iter().any(|candidate| {
+            candidate.is_back_like_control()
+                && instruction_names_candidate(&input.instruction, &candidate.name)
+        })
+}
+
 /// One offered element.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Candidate {
@@ -669,7 +680,7 @@ impl DecisionRequest {
             );
         }
 
-        let history_back = instruction_requests_history_back(&input.instruction);
+        let history_back = history_back_is_requested(input);
         let state = json!({
             "instruction": input.instruction,
             "page": { "url": input.url, "title": input.title },
@@ -771,6 +782,11 @@ pub struct Decision {
     /// Set when the operation needs a target or value that was not offered.
     /// Nothing runs; the caller reports `blocked` with this reason.
     pub blocked_reason: Option<String>,
+    /// True when the block is an operation/target role mismatch. The decision
+    /// loop retries such a pairing once before reporting it, because another
+    /// offered target can still satisfy the instruction.
+    #[serde(skip)]
+    pub(crate) pairing_blocked: bool,
     /// Distribution that gated the decision: the target head for operations
     /// that need a target, otherwise the operation head.
     pub probabilities: Map<String, Value>,
@@ -1010,6 +1026,7 @@ pub fn validate_decision(
         DecideError::InvalidAnswer("The operation answer was not a known operation.".to_string())
     })?;
 
+    let mut pairing_blocked = false;
     let mut reasons: Vec<String> = Vec::new();
     let mut target = None;
     let mut target_head = None;
@@ -1022,6 +1039,7 @@ pub fn validate_decision(
             target = Some(choice.clone());
             target_head = Some((probabilities, confidence));
             if !state_candidate_supports(&decision_request.state, &choice, operation) {
+                pairing_blocked = true;
                 reasons.push(format!(
                     "The chosen target does not support {}.",
                     operation.as_str()
@@ -1075,6 +1093,7 @@ pub fn validate_decision(
         target,
         value_key,
         blocked_reason,
+        pairing_blocked,
         probabilities: gating.0,
         confidence,
     })
@@ -1104,15 +1123,35 @@ pub async fn decide_with_retry(
     request: &DecisionRequest,
 ) -> Result<Decision, DecideError> {
     let mut last = None;
+    let mut blocked_pairing: Option<Decision> = None;
     for attempt in 0..2 {
         let response = decider.decide(request).await?;
         match validate_decision(request, &response.answers) {
-            Ok(decision) => return Ok(decision),
+            Ok(decision) => {
+                if decision.pairing_blocked && attempt == 0 {
+                    // One more look can find another offered target that fits
+                    // the operation. If it does not, the pairing is returned as
+                    // blocked rather than as an error.
+                    last = decision.blocked_reason.clone();
+                    blocked_pairing = Some(decision);
+                    continue;
+                }
+                return Ok(decision);
+            }
             Err(DecideError::InvalidAnswer(message)) if attempt == 0 => {
                 last = Some(message);
             }
+            Err(DecideError::InvalidAnswer(message)) => {
+                if let Some(decision) = blocked_pairing.take() {
+                    return Ok(decision);
+                }
+                return Err(DecideError::InvalidAnswer(message));
+            }
             Err(error) => return Err(error),
         }
+    }
+    if let Some(decision) = blocked_pairing {
+        return Ok(decision);
     }
     Err(DecideError::InvalidAnswer(format!(
         "The decider returned an invalid answer twice and nothing ran. {}",
@@ -1951,6 +1990,46 @@ mod tests {
     }
 
     #[test]
+    fn a_named_previous_page_control_is_a_click_not_history() {
+        let mut input = input();
+        input.instruction = "Go back to the previous page of results".to_string();
+        input.candidates.push(Candidate {
+            key: "e4".to_string(),
+            role: "button".to_string(),
+            name: "Previous page".to_string(),
+            nth: None,
+            activates: true,
+        });
+        let request = DecisionRequest::build("jev-latest", &input, false);
+        assert!(request.offered.target);
+        assert!(request.questions.get("target").is_some());
+        let answers = json!({
+            "operation": answer("click", probabilities(&request, "operation", "click", 0.9)),
+            "target": answer("e4", probabilities(&request, "target", "e4", 0.95)),
+        });
+        let decision = validate_decision(&request, &answers).unwrap();
+        assert_eq!(decision.operation, Operation::Click);
+        assert_eq!(decision.target.as_deref(), Some("e4"));
+        assert!(decision.blocked_reason.is_none());
+    }
+
+    #[test]
+    fn history_wording_wins_over_a_nav_link_named_in_the_instruction() {
+        let mut input = input();
+        input.instruction = "Go back to the cart from before this checkout".to_string();
+        input.candidates.push(Candidate {
+            key: "e5".to_string(),
+            role: "link".to_string(),
+            name: "Cart".to_string(),
+            nth: None,
+            activates: true,
+        });
+        let request = DecisionRequest::build("jev-latest", &input, false);
+        assert!(!request.offered.target);
+        assert!(!offered_keys(&request, "operation").contains(&"click".to_string()));
+    }
+
+    #[test]
     fn back_like_candidate_is_described_as_an_in_page_control() {
         let control = Candidate {
             key: "e5".to_string(),
@@ -2338,6 +2417,50 @@ mod tests {
             .await
             .unwrap_err();
         assert!(matches!(error, DecideError::InvalidAnswer(_)));
+        assert_eq!(decider.calls.load(std::sync::atomic::Ordering::SeqCst), 2);
+    }
+
+    #[tokio::test]
+    async fn retries_a_role_mismatch_then_uses_the_valid_pairing() {
+        let mut input = textbox_input();
+        input.value_keys = vec!["email".to_string()];
+        let request = DecisionRequest::build("jev-latest", &input, false);
+        let mismatch = json!({
+            "operation": answer("click", probabilities(&request, "operation", "click", 0.9)),
+            "target": answer("e1", probabilities(&request, "target", "e1", 0.95)),
+        });
+        let corrected = json!({
+            "operation": answer("fill", probabilities(&request, "operation", "fill", 0.9)),
+            "target": answer("e1", probabilities(&request, "target", "e1", 0.95)),
+        });
+        let decider = Arc::new(ScriptedDecider {
+            answers: std::sync::Mutex::new(vec![Ok(mismatch), Ok(corrected)]),
+            calls: std::sync::atomic::AtomicUsize::new(0),
+        });
+        let decision = decide_with_retry(decider.as_ref(), &request).await.unwrap();
+        assert_eq!(decision.operation, Operation::Fill);
+        assert!(decision.blocked_reason.is_none());
+        assert_eq!(decider.calls.load(std::sync::atomic::Ordering::SeqCst), 2);
+    }
+
+    #[tokio::test]
+    async fn a_repeated_role_mismatch_is_blocked_not_an_error() {
+        let request = DecisionRequest::build("jev-latest", &textbox_input(), false);
+        let mismatch = json!({
+            "operation": answer("click", probabilities(&request, "operation", "click", 0.9)),
+            "target": answer("e1", probabilities(&request, "target", "e1", 0.95)),
+        });
+        let decider = Arc::new(ScriptedDecider {
+            answers: std::sync::Mutex::new(vec![Ok(mismatch.clone()), Ok(mismatch)]),
+            calls: std::sync::atomic::AtomicUsize::new(0),
+        });
+        let decision = decide_with_retry(decider.as_ref(), &request).await.unwrap();
+        assert_eq!(decision.operation, Operation::Click);
+        assert_eq!(decision.target.as_deref(), Some("e1"));
+        assert!(decision
+            .blocked_reason
+            .as_deref()
+            .is_some_and(|reason| reason.contains("does not support click")));
         assert_eq!(decider.calls.load(std::sync::atomic::Ordering::SeqCst), 2);
     }
 

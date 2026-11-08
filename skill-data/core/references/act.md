@@ -50,7 +50,7 @@ Only rendered, actionable elements are offered: link, button, textbox, searchbox
 
 Disabled elements are never offered. The `disabled` attribute, `aria-disabled="true"`, and controls inside a disabled fieldset are dropped before the decision, because none of them can be activated or edited.
 
-Roles are also matched to operations. `click` is offered only for link, button, checkbox, radio, option, menuitem, tab, and a combobox that opens a menu. Textboxes and searchboxes take `fill`, so a click on one is blocked with a reason and a fill or select with no supplied value is blocked instead of turning into a click. `fill` targets a textbox, searchbox, or editable combobox. `select` targets a combobox or listbox. The state lists each candidate's supported operations, and an unsupported operation/target pairing is blocked, not retried.
+Roles are also matched to operations. `click` is offered only for link, button, checkbox, radio, option, menuitem, tab, and a combobox that opens a menu. Textboxes and searchboxes take `fill`, so a click on one is blocked with a reason and a fill or select with no supplied value is blocked instead of turning into a click. `fill` targets a textbox, searchbox, or editable combobox. `select` targets a combobox or listbox. The state lists each candidate's supported operations, and an unsupported operation/target pairing gets one corrective retry, then is blocked rather than raising an error.
 
 Unusual answers are contained. A choice outside the offered options, a probability set that does not cover the offered options, or a choice that is not the most likely option fails validation. `act` retries once, and a second invalid answer is an error; nothing runs.
 
