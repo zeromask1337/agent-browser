@@ -10,14 +10,6 @@ TYPESAFE_API_KEY=... AGENT_BROWSER_DECIDER=jev \
   cargo test e2e_decide_eval -- --ignored --nocapture
 ```
 
-For the LLM baseline on the same cases:
-
-```bash
-cd cli
-AI_GATEWAY_API_KEY=... AGENT_BROWSER_DECIDER=llm \
-  cargo test e2e_decide_eval -- --ignored --nocapture
-```
-
 The runner reads `cases.json` by default. Point it at another file with `AGENT_BROWSER_DECIDE_CASES`:
 
 ```bash
@@ -43,8 +35,10 @@ The runner launches one headless Chrome, loads each fixture as a data URL, snaps
 These are the gates to report against. The repository does not tune labels or thresholds to pass them, and a failure is reported as a failure.
 
 - Wrong actions under 1% at the chosen confidence threshold.
+- A 95% Clopper-Pearson upper bound on the wrong rate is reported with every fresh run. The point estimate and the upper bound are both evidence; neither is treated as proof when the bound is above the gate.
 - p50 per decision under one second from the machine that ran the test.
-- The LLM arm runs on the same cases, so the two reports are comparable.
+
+The LLM comparison arm is removed. It is not part of the gate, and a fresh run is not required to call an LLM decider.
 
 ## Known gap
 
@@ -64,6 +58,6 @@ Add a fixture under `fixtures/`, then add an entry to `cases.json`:
 }
 ```
 
-`target_name` is the accessible name shown in a snapshot. Omit it for operations that do not take a target: `scroll_down`, `scroll_up`, `back`, `wait`, and `done`.
+`target_name` is the accessible name shown in a snapshot. Omit it for operations that do not take a target: `scroll_down`, `scroll_up`, `back`, and `wait`.
 
 Set `expect.blocked` to `true` when the correct operation needs a value the caller did not supply. The decision then passes only when it is blocked, not when it is an error.
