@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Laboratory inventory</title>
+  </head>
+  <body>
+    <header>
+      <h1>Laboratory inventory</h1>
+      <nav>
+      <a href="/samples">Samples</a>
+      <a href="/reagents">Reagents</a>
+      <a href="/equipment">Equipment</a>
+      <a href="/protocols">Protocols</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="lab_inventory-f0">Sample id</label>
+        <input id="lab_inventory-f0" type="text" data-key="sample" value="LAB-9914">
+        <label for="lab_inventory-f1">Reagent name</label>
+        <input id="lab_inventory-f1" type="text" data-key="reagent" value="Buffer P2">
+        <label for="lab_inventory-f2">Lot number</label>
+        <input id="lab_inventory-f2" type="text" data-key="lot" value="L-3381">
+        <label for="lab_inventory-f3">Storage temp</label>
+        <input id="lab_inventory-f3" type="text" data-key="temp" value="Minus 20">
+        <label for="lab_inventory-f4">Technician name</label>
+        <input id="lab_inventory-f4" type="text" data-key="technician" value="Ravi Shah">
+        <label for="lab_inventory-s0">Assay</label>
+        <select id="lab_inventory-s0" data-key="assay">
+          <option selected>PCR</option>
+          <option>ELISA</option>
+          <option>Sequencing</option>
+        </select>
+        <label for="lab_inventory-s1">Storage</label>
+        <select id="lab_inventory-s1" data-key="storage">
+          <option>Fridge</option>
+          <option selected>Freezer</option>
+          <option>Bench</option>
+        </select>
+        <label for="lab_inventory-s2">Hazard</label>
+        <select id="lab_inventory-s2" data-key="hazard">
+          <option>None</option>
+          <option>Flammable</option>
+          <option selected>Biohazard</option>
+        </select>
+        <label for="lab_inventory-s3">Stock status</label>
+        <select id="lab_inventory-s3" data-key="stock">
+          <option>In stock</option>
+          <option selected>Low</option>
+          <option>Expired</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Log sample</button>
+      <button type="button">Reserve reagent</button>
+      <button type="button">Flag expired</button>
+      <button type="button">Calibrate analyzer</button>
+      <button type="button">Export inventory</button>
+        <p><a href="/">Back to Samples</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Previous page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Community grant review</title>
+  </head>
+  <body>
+    <header>
+      <h1>Community grant review</h1>
+      <nav>
+      <a href="/applications">Applications</a>
+      <a href="/reviewers">Reviewers</a>
+      <a href="/awards">Awards</a>
+      <a href="/budget">Budget</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="grant_review-f0">Application id</label>
+        <input id="grant_review-f0" type="text" data-key="application" value="GR-7712">
+        <label for="grant_review-f1">Applicant name</label>
+        <input id="grant_review-f1" type="text" data-key="applicant" value="Northside Arts">
+        <label for="grant_review-f2">Requested amount</label>
+        <input id="grant_review-f2" type="text" data-key="amount" value="24000">
+        <label for="grant_review-f3">Review note</label>
+        <input id="grant_review-f3" type="text" data-key="note" value="Strong community plan">
+        <label for="grant_review-f4">Reviewer name</label>
+        <input id="grant_review-f4" type="text" data-key="reviewer" value="Amara Cole">
+        <label for="grant_review-s0">Track</label>
+        <select id="grant_review-s0" data-key="track">
+          <option>Arts</option>
+          <option selected>Education</option>
+          <option>Health</option>
+        </select>
+        <label for="grant_review-s1">Decision</label>
+        <select id="grant_review-s1" data-key="decision">
+          <option>Pending</option>
+          <option selected>Fund</option>
+          <option>Decline</option>
+        </select>
+        <label for="grant_review-s2">Region</label>
+        <select id="grant_review-s2" data-key="region">
+          <option>Metro</option>
+          <option selected>Coastal</option>
+          <option>Inland</option>
+        </select>
+        <label for="grant_review-s3">Cycle</label>
+        <select id="grant_review-s3" data-key="cycle">
+          <option selected>Spring</option>
+          <option>Fall</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Score application</button>
+      <button type="button">Request revision</button>
+      <button type="button">Approve award</button>
+      <button type="button">Assign reviewer</button>
+      <button type="button">Export scores</button>
+        <p><a href="/">Back to Applications</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Next page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

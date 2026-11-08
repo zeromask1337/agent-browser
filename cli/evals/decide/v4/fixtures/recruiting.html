@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Recruiting pipeline</title>
+  </head>
+  <body>
+    <header>
+      <h1>Recruiting pipeline</h1>
+      <nav>
+      <a href="/candidates">Candidates</a>
+      <a href="/roles">Roles</a>
+      <a href="/interviews">Interviews</a>
+      <a href="/offers">Offers</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="recruiting-f0">Candidate name</label>
+        <input id="recruiting-f0" type="text" data-key="candidate" value="Jordan Ellis">
+        <label for="recruiting-f1">Role title</label>
+        <input id="recruiting-f1" type="text" data-key="role" value="Staff engineer">
+        <label for="recruiting-f2">Recruiter name</label>
+        <input id="recruiting-f2" type="text" data-key="recruiter" value="Sofia Marin">
+        <label for="recruiting-f3">Interview date</label>
+        <input id="recruiting-f3" type="text" data-key="interview" value="2027-05-11">
+        <label for="recruiting-f4">Feedback note</label>
+        <input id="recruiting-f4" type="text" data-key="feedback" value="Strong systems design">
+        <label for="recruiting-s0">Stage</label>
+        <select id="recruiting-s0" data-key="stage">
+          <option>Screen</option>
+          <option selected>Interview</option>
+          <option>Offer</option>
+        </select>
+        <label for="recruiting-s1">Source</label>
+        <select id="recruiting-s1" data-key="source">
+          <option selected>Referral</option>
+          <option>Careers page</option>
+          <option>Agency</option>
+        </select>
+        <label for="recruiting-s2">Location</label>
+        <select id="recruiting-s2" data-key="location">
+          <option selected>Remote</option>
+          <option>Austin</option>
+          <option>London</option>
+        </select>
+        <label for="recruiting-s3">Level</label>
+        <select id="recruiting-s3" data-key="level">
+          <option>Mid</option>
+          <option selected>Senior</option>
+          <option>Staff</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Move to interview</button>
+      <button type="button">Reject candidate</button>
+      <button type="button">Send offer</button>
+      <button type="button">Schedule screen</button>
+      <button type="button">Export pipeline</button>
+        <p><a href="/">Back to Candidates</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Next page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vendor portal</title>
+  </head>
+  <body>
+    <header>
+      <h1>Vendor portal</h1>
+      <nav>
+      <a href="/vendors">Vendors</a>
+      <a href="/contracts">Contracts</a>
+      <a href="/invoices">Invoices</a>
+      <a href="/compliance">Compliance</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="vendor_portal-f0">Vendor name</label>
+        <input id="vendor_portal-f0" type="text" data-key="vendor" value="Summit Freight">
+        <label for="vendor_portal-f1">Contact name</label>
+        <input id="vendor_portal-f1" type="text" data-key="contact" value="Iris Chen">
+        <label for="vendor_portal-f2">Tax id</label>
+        <input id="vendor_portal-f2" type="text" data-key="tax" value="88-2047113">
+        <label for="vendor_portal-f3">Contract end</label>
+        <input id="vendor_portal-f3" type="text" data-key="contract_end" value="2027-12-31">
+        <label for="vendor_portal-f4">Compliance note</label>
+        <input id="vendor_portal-f4" type="text" data-key="note" value="Insurance current">
+        <label for="vendor_portal-s0">Category</label>
+        <select id="vendor_portal-s0" data-key="category">
+          <option selected>Logistics</option>
+          <option>Software</option>
+          <option>Facilities</option>
+        </select>
+        <label for="vendor_portal-s1">Vendor status</label>
+        <select id="vendor_portal-s1" data-key="vendor_status">
+          <option>Prospect</option>
+          <option selected>Active</option>
+          <option>Suspended</option>
+        </select>
+        <label for="vendor_portal-s2">Review</label>
+        <select id="vendor_portal-s2" data-key="review">
+          <option selected>Annual</option>
+          <option>Biennial</option>
+        </select>
+        <label for="vendor_portal-s3">Region</label>
+        <select id="vendor_portal-s3" data-key="region">
+          <option selected>Domestic</option>
+          <option>International</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Approve vendor</button>
+      <button type="button">Upload contract</button>
+      <button type="button">Dispute invoice</button>
+      <button type="button">Request documents</button>
+      <button type="button">Export vendors</button>
+        <p><a href="/">Back to Vendors</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Previous page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

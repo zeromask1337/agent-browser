@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Meridian claims portal</title>
+  </head>
+  <body>
+    <header>
+      <h1>Meridian claims portal</h1>
+      <nav>
+      <a href="/claims">Claims</a>
+      <a href="/members">Members</a>
+      <a href="/payments">Payments</a>
+      <a href="/documents">Documents</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="claims_portal-f0">Claim number</label>
+        <input id="claims_portal-f0" type="text" data-key="claim" value="CLM-4821">
+        <label for="claims_portal-f1">Member name</label>
+        <input id="claims_portal-f1" type="text" data-key="member" value="Dana Ruiz">
+        <label for="claims_portal-f2">Service date</label>
+        <input id="claims_portal-f2" type="text" data-key="date" value="2027-01-12">
+        <label for="claims_portal-f3">Provider NPI</label>
+        <input id="claims_portal-f3" type="text" data-key="npi" value="1548392017">
+        <label for="claims_portal-f4">Adjuster note</label>
+        <input id="claims_portal-f4" type="text" data-key="note" value="Review the duplicate line">
+        <label for="claims_portal-s0">Status</label>
+        <select id="claims_portal-s0" data-key="status">
+          <option>Open</option>
+          <option selected>In review</option>
+          <option>Approved</option>
+          <option>Denied</option>
+        </select>
+        <label for="claims_portal-s1">Priority</label>
+        <select id="claims_portal-s1" data-key="priority">
+          <option>Low</option>
+          <option>Normal</option>
+          <option selected>Urgent</option>
+        </select>
+        <label for="claims_portal-s2">Region</label>
+        <select id="claims_portal-s2" data-key="region">
+          <option>North</option>
+          <option>South</option>
+          <option selected>West</option>
+        </select>
+        <label for="claims_portal-s3">Plan</label>
+        <select id="claims_portal-s3" data-key="plan">
+          <option>Gold</option>
+          <option selected>Silver</option>
+          <option>Bronze</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Approve claim</button>
+      <button type="button">Request documents</button>
+      <button type="button">Assign adjuster</button>
+      <button type="button">Flag duplicate</button>
+      <button type="button">Export claim</button>
+        <p><a href="/">Back to Claims</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Next page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

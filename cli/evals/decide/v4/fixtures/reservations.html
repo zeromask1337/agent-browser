@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Restaurant reservations</title>
+  </head>
+  <body>
+    <header>
+      <h1>Restaurant reservations</h1>
+      <nav>
+      <a href="/tables">Tables</a>
+      <a href="/guests">Guests</a>
+      <a href="/queue">Queue</a>
+      <a href="/floor-plan">Floor plan</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="reservations-f0">Reservation name</label>
+        <input id="reservations-f0" type="text" data-key="name" value="Ada Flores">
+        <label for="reservations-f1">Party size</label>
+        <input id="reservations-f1" type="text" data-key="party" value="6">
+        <label for="reservations-f2">Time</label>
+        <input id="reservations-f2" type="text" data-key="time" value="7:30 PM">
+        <label for="reservations-f3">Phone number</label>
+        <input id="reservations-f3" type="text" data-key="phone" value="555-0188">
+        <label for="reservations-f4">Note</label>
+        <input id="reservations-f4" type="text" data-key="note" value="Window table">
+        <label for="reservations-s0">Service</label>
+        <select id="reservations-s0" data-key="service">
+          <option selected>Dinner</option>
+          <option>Lunch</option>
+          <option>Brunch</option>
+        </select>
+        <label for="reservations-s1">Area</label>
+        <select id="reservations-s1" data-key="area">
+          <option selected>Patio</option>
+          <option>Dining room</option>
+          <option>Bar</option>
+        </select>
+        <label for="reservations-s2">Reservation status</label>
+        <select id="reservations-s2" data-key="reservation_status">
+          <option selected>Booked</option>
+          <option>Seated</option>
+          <option>Cancelled</option>
+        </select>
+        <label for="reservations-s3">Occasion</label>
+        <select id="reservations-s3" data-key="occasion">
+          <option selected>Birthday</option>
+          <option>Anniversary</option>
+          <option>None</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Seat party</button>
+      <button type="button">Add to queue</button>
+      <button type="button">Cancel reservation</button>
+      <button type="button">Move table</button>
+      <button type="button">Print ticket</button>
+        <p><a href="/">Back to Tables</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Previous page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

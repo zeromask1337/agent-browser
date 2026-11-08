@@ -1,0 +1,4418 @@
+{
+  "cases": [
+    {
+      "name": "claims_portal-click-approve-claim",
+      "fixture": "claims_portal.html",
+      "instruction": "Press Approve claim to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Approve claim"
+      }
+    },
+    {
+      "name": "claims_portal-click-request-documents",
+      "fixture": "claims_portal.html",
+      "instruction": "Run Request documents for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Request documents"
+      }
+    },
+    {
+      "name": "claims_portal-click-assign-adjuster",
+      "fixture": "claims_portal.html",
+      "instruction": "Open Assign adjuster for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Assign adjuster"
+      }
+    },
+    {
+      "name": "claims_portal-click-flag-duplicate",
+      "fixture": "claims_portal.html",
+      "instruction": "Start Flag duplicate now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Flag duplicate"
+      }
+    },
+    {
+      "name": "claims_portal-click-export-claim",
+      "fixture": "claims_portal.html",
+      "instruction": "Use Export claim on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Export claim"
+      }
+    },
+    {
+      "name": "claims_portal-click-claims-nav",
+      "fixture": "claims_portal.html",
+      "instruction": "Open the Claims page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Claims"
+      }
+    },
+    {
+      "name": "claims_portal-click-next-page-pagination",
+      "fixture": "claims_portal.html",
+      "instruction": "Go to the Next page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Next page"
+      }
+    },
+    {
+      "name": "claims_portal-fill-claim-number",
+      "fixture": "claims_portal.html",
+      "instruction": "Enter CLM-4821 in Claim number",
+      "values": {
+        "claim": "CLM-4821"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Claim number"
+      }
+    },
+    {
+      "name": "claims_portal-fill-member-name",
+      "fixture": "claims_portal.html",
+      "instruction": "Put Dana Ruiz in the Member name field",
+      "values": {
+        "member": "Dana Ruiz"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Member name"
+      }
+    },
+    {
+      "name": "claims_portal-fill-service-date",
+      "fixture": "claims_portal.html",
+      "instruction": "Type 2027-01-12 into Service date",
+      "values": {
+        "date": "2027-01-12"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Service date"
+      }
+    },
+    {
+      "name": "claims_portal-fill-provider-npi",
+      "fixture": "claims_portal.html",
+      "instruction": "Write 1548392017 in Provider NPI",
+      "values": {
+        "npi": "1548392017"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Provider NPI"
+      }
+    },
+    {
+      "name": "claims_portal-fill-adjuster-note-blocked",
+      "fixture": "claims_portal.html",
+      "instruction": "Fill Adjuster note with the reference from the email",
+      "expect": {
+        "operation": "fill",
+        "target_name": "Adjuster note",
+        "blocked": true
+      }
+    },
+    {
+      "name": "claims_portal-select-status",
+      "fixture": "claims_portal.html",
+      "instruction": "Set Status to In review",
+      "values": {
+        "status": "In review"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Status"
+      }
+    },
+    {
+      "name": "claims_portal-select-priority",
+      "fixture": "claims_portal.html",
+      "instruction": "Choose Urgent for Priority",
+      "values": {
+        "priority": "Urgent"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Priority"
+      }
+    },
+    {
+      "name": "claims_portal-select-region",
+      "fixture": "claims_portal.html",
+      "instruction": "Change Region to West",
+      "values": {
+        "region": "West"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Region"
+      }
+    },
+    {
+      "name": "claims_portal-select-plan-blocked",
+      "fixture": "claims_portal.html",
+      "instruction": "Choose the Plan from the intake form",
+      "expect": {
+        "operation": "select",
+        "target_name": "Plan",
+        "blocked": true
+      }
+    },
+    {
+      "name": "claims_portal-scroll_down-footer",
+      "fixture": "claims_portal.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "claims_portal-scroll_up-heading",
+      "fixture": "claims_portal.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "claims_portal-back-history",
+      "fixture": "claims_portal.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "claims_portal-wait-settle",
+      "fixture": "claims_portal.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "field_service-click-dispatch-technician",
+      "fixture": "field_service.html",
+      "instruction": "Press Dispatch technician to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Dispatch technician"
+      }
+    },
+    {
+      "name": "field_service-click-close-job",
+      "fixture": "field_service.html",
+      "instruction": "Run Close job for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Close job"
+      }
+    },
+    {
+      "name": "field_service-click-order-part",
+      "fixture": "field_service.html",
+      "instruction": "Open Order part for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Order part"
+      }
+    },
+    {
+      "name": "field_service-click-reschedule-visit",
+      "fixture": "field_service.html",
+      "instruction": "Start Reschedule visit now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Reschedule visit"
+      }
+    },
+    {
+      "name": "field_service-click-print-work-order",
+      "fixture": "field_service.html",
+      "instruction": "Use Print work order on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Print work order"
+      }
+    },
+    {
+      "name": "field_service-click-jobs-nav",
+      "fixture": "field_service.html",
+      "instruction": "Open the Jobs page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Jobs"
+      }
+    },
+    {
+      "name": "field_service-click-previous-page-pagination",
+      "fixture": "field_service.html",
+      "instruction": "Go to the Previous page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Previous page"
+      }
+    },
+    {
+      "name": "field_service-fill-job-number",
+      "fixture": "field_service.html",
+      "instruction": "Enter FS-20831 in Job number",
+      "values": {
+        "job": "FS-20831"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Job number"
+      }
+    },
+    {
+      "name": "field_service-fill-customer-name",
+      "fixture": "field_service.html",
+      "instruction": "Put Harbor Cafe in the Customer name field",
+      "values": {
+        "customer": "Harbor Cafe"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Customer name"
+      }
+    },
+    {
+      "name": "field_service-fill-site-address",
+      "fixture": "field_service.html",
+      "instruction": "Type 44 Dock Street into Site address",
+      "values": {
+        "address": "44 Dock Street"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Site address"
+      }
+    },
+    {
+      "name": "field_service-fill-contact-phone",
+      "fixture": "field_service.html",
+      "instruction": "Write 555-0142 in Contact phone",
+      "values": {
+        "phone": "555-0142"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Contact phone"
+      }
+    },
+    {
+      "name": "field_service-fill-work-note-blocked",
+      "fixture": "field_service.html",
+      "instruction": "Fill Work note with the reference from the email",
+      "expect": {
+        "operation": "fill",
+        "target_name": "Work note",
+        "blocked": true
+      }
+    },
+    {
+      "name": "field_service-select-visit-window",
+      "fixture": "field_service.html",
+      "instruction": "Set Visit window to Afternoon",
+      "values": {
+        "window": "Afternoon"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Visit window"
+      }
+    },
+    {
+      "name": "field_service-select-trade",
+      "fixture": "field_service.html",
+      "instruction": "Choose HVAC for Trade",
+      "values": {
+        "trade": "HVAC"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Trade"
+      }
+    },
+    {
+      "name": "field_service-select-urgency",
+      "fixture": "field_service.html",
+      "instruction": "Change Urgency to Urgent",
+      "values": {
+        "urgency": "Urgent"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Urgency"
+      }
+    },
+    {
+      "name": "field_service-select-zone-blocked",
+      "fixture": "field_service.html",
+      "instruction": "Choose the Zone from the intake form",
+      "expect": {
+        "operation": "select",
+        "target_name": "Zone",
+        "blocked": true
+      }
+    },
+    {
+      "name": "field_service-scroll_down-footer",
+      "fixture": "field_service.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "field_service-scroll_up-heading",
+      "fixture": "field_service.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "field_service-back-history",
+      "fixture": "field_service.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "field_service-wait-settle",
+      "fixture": "field_service.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "payroll_admin-click-approve-payroll",
+      "fixture": "payroll_admin.html",
+      "instruction": "Press Approve payroll to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Approve payroll"
+      }
+    },
+    {
+      "name": "payroll_admin-click-hold-payment",
+      "fixture": "payroll_admin.html",
+      "instruction": "Run Hold payment for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Hold payment"
+      }
+    },
+    {
+      "name": "payroll_admin-click-add-deduction",
+      "fixture": "payroll_admin.html",
+      "instruction": "Open Add deduction for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Add deduction"
+      }
+    },
+    {
+      "name": "payroll_admin-click-recalculate-taxes",
+      "fixture": "payroll_admin.html",
+      "instruction": "Start Recalculate taxes now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Recalculate taxes"
+      }
+    },
+    {
+      "name": "payroll_admin-click-export-register",
+      "fixture": "payroll_admin.html",
+      "instruction": "Use Export register on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Export register"
+      }
+    },
+    {
+      "name": "payroll_admin-click-runs-nav",
+      "fixture": "payroll_admin.html",
+      "instruction": "Open the Runs page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Runs"
+      }
+    },
+    {
+      "name": "payroll_admin-click-next-page-pagination",
+      "fixture": "payroll_admin.html",
+      "instruction": "Go to the Next page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Next page"
+      }
+    },
+    {
+      "name": "payroll_admin-fill-pay-period",
+      "fixture": "payroll_admin.html",
+      "instruction": "Enter 2027-03 in Pay period",
+      "values": {
+        "period": "2027-03"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Pay period"
+      }
+    },
+    {
+      "name": "payroll_admin-fill-employee-name",
+      "fixture": "payroll_admin.html",
+      "instruction": "Put Priya Nair in the Employee name field",
+      "values": {
+        "employee": "Priya Nair"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Employee name"
+      }
+    },
+    {
+      "name": "payroll_admin-fill-employee-id",
+      "fixture": "payroll_admin.html",
+      "instruction": "Type E-10442 into Employee id",
+      "values": {
+        "employee_id": "E-10442"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Employee id"
+      }
+    },
+    {
+      "name": "payroll_admin-fill-bank-account",
+      "fixture": "payroll_admin.html",
+      "instruction": "Write 8842 in Bank account",
+      "values": {
+        "bank": "8842"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Bank account"
+      }
+    },
+    {
+      "name": "payroll_admin-fill-memo",
+      "fixture": "payroll_admin.html",
+      "instruction": "Add March adjustment to Memo",
+      "values": {
+        "memo": "March adjustment"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Memo"
+      }
+    },
+    {
+      "name": "payroll_admin-select-pay-group",
+      "fixture": "payroll_admin.html",
+      "instruction": "Set Pay group to Biweekly",
+      "values": {
+        "group": "Biweekly"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Pay group"
+      }
+    },
+    {
+      "name": "payroll_admin-select-cost-center",
+      "fixture": "payroll_admin.html",
+      "instruction": "Choose Operations for Cost center",
+      "values": {
+        "center": "Operations"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Cost center"
+      }
+    },
+    {
+      "name": "payroll_admin-select-currency",
+      "fixture": "payroll_admin.html",
+      "instruction": "Change Currency to USD",
+      "values": {
+        "currency": "USD"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Currency"
+      }
+    },
+    {
+      "name": "payroll_admin-select-method",
+      "fixture": "payroll_admin.html",
+      "instruction": "Pick Direct deposit in the Method dropdown",
+      "values": {
+        "method": "Direct deposit"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Method"
+      }
+    },
+    {
+      "name": "payroll_admin-scroll_down-footer",
+      "fixture": "payroll_admin.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "payroll_admin-scroll_up-heading",
+      "fixture": "payroll_admin.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "payroll_admin-back-history",
+      "fixture": "payroll_admin.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "payroll_admin-wait-settle",
+      "fixture": "payroll_admin.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "fleet_maintenance-click-schedule-service",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Press Schedule service to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Schedule service"
+      }
+    },
+    {
+      "name": "fleet_maintenance-click-mark-inspected",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Run Mark inspected for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Mark inspected"
+      }
+    },
+    {
+      "name": "fleet_maintenance-click-order-tires",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Open Order tires for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Order tires"
+      }
+    },
+    {
+      "name": "fleet_maintenance-click-report-fault",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Start Report fault now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Report fault"
+      }
+    },
+    {
+      "name": "fleet_maintenance-click-download-log",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Use Download log on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Download log"
+      }
+    },
+    {
+      "name": "fleet_maintenance-click-vehicles-nav",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Open the Vehicles page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Vehicles"
+      }
+    },
+    {
+      "name": "fleet_maintenance-click-previous-page-pagination",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Go to the Previous page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Previous page"
+      }
+    },
+    {
+      "name": "fleet_maintenance-fill-vehicle-id",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Enter VAN-317 in Vehicle id",
+      "values": {
+        "vehicle": "VAN-317"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Vehicle id"
+      }
+    },
+    {
+      "name": "fleet_maintenance-fill-odometer",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Put 84210 in the Odometer field",
+      "values": {
+        "odometer": "84210"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Odometer"
+      }
+    },
+    {
+      "name": "fleet_maintenance-fill-driver-name",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Type Luis Ortega into Driver name",
+      "values": {
+        "driver": "Luis Ortega"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Driver name"
+      }
+    },
+    {
+      "name": "fleet_maintenance-fill-garage-bay",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Write B-2 in Garage bay",
+      "values": {
+        "bay": "B-2"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Garage bay"
+      }
+    },
+    {
+      "name": "fleet_maintenance-fill-fault-note-blocked",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Fill Fault note with the reference from the email",
+      "expect": {
+        "operation": "fill",
+        "target_name": "Fault note",
+        "blocked": true
+      }
+    },
+    {
+      "name": "fleet_maintenance-select-service-type",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Set Service type to Brake service",
+      "values": {
+        "service": "Brake service"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Service type"
+      }
+    },
+    {
+      "name": "fleet_maintenance-select-depot",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Choose Harbor for Depot",
+      "values": {
+        "depot": "Harbor"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Depot"
+      }
+    },
+    {
+      "name": "fleet_maintenance-select-job-status",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Change Job status to Scheduled",
+      "values": {
+        "job_status": "Scheduled"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Job status"
+      }
+    },
+    {
+      "name": "fleet_maintenance-select-severity-blocked",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Choose the Severity from the intake form",
+      "expect": {
+        "operation": "select",
+        "target_name": "Severity",
+        "blocked": true
+      }
+    },
+    {
+      "name": "fleet_maintenance-scroll_down-footer",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "fleet_maintenance-scroll_up-heading",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "fleet_maintenance-back-history",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "fleet_maintenance-wait-settle",
+      "fixture": "fleet_maintenance.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "grant_review-click-score-application",
+      "fixture": "grant_review.html",
+      "instruction": "Press Score application to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Score application"
+      }
+    },
+    {
+      "name": "grant_review-click-request-revision",
+      "fixture": "grant_review.html",
+      "instruction": "Run Request revision for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Request revision"
+      }
+    },
+    {
+      "name": "grant_review-click-approve-award",
+      "fixture": "grant_review.html",
+      "instruction": "Open Approve award for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Approve award"
+      }
+    },
+    {
+      "name": "grant_review-click-assign-reviewer",
+      "fixture": "grant_review.html",
+      "instruction": "Start Assign reviewer now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Assign reviewer"
+      }
+    },
+    {
+      "name": "grant_review-click-export-scores",
+      "fixture": "grant_review.html",
+      "instruction": "Use Export scores on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Export scores"
+      }
+    },
+    {
+      "name": "grant_review-click-applications-nav",
+      "fixture": "grant_review.html",
+      "instruction": "Open the Applications page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Applications"
+      }
+    },
+    {
+      "name": "grant_review-click-next-page-pagination",
+      "fixture": "grant_review.html",
+      "instruction": "Go to the Next page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Next page"
+      }
+    },
+    {
+      "name": "grant_review-fill-application-id",
+      "fixture": "grant_review.html",
+      "instruction": "Enter GR-7712 in Application id",
+      "values": {
+        "application": "GR-7712"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Application id"
+      }
+    },
+    {
+      "name": "grant_review-fill-applicant-name",
+      "fixture": "grant_review.html",
+      "instruction": "Put Northside Arts in the Applicant name field",
+      "values": {
+        "applicant": "Northside Arts"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Applicant name"
+      }
+    },
+    {
+      "name": "grant_review-fill-requested-amount",
+      "fixture": "grant_review.html",
+      "instruction": "Type 24000 into Requested amount",
+      "values": {
+        "amount": "24000"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Requested amount"
+      }
+    },
+    {
+      "name": "grant_review-fill-review-note",
+      "fixture": "grant_review.html",
+      "instruction": "Write Strong community plan in Review note",
+      "values": {
+        "note": "Strong community plan"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Review note"
+      }
+    },
+    {
+      "name": "grant_review-fill-reviewer-name-blocked",
+      "fixture": "grant_review.html",
+      "instruction": "Fill Reviewer name with the reference from the email",
+      "expect": {
+        "operation": "fill",
+        "target_name": "Reviewer name",
+        "blocked": true
+      }
+    },
+    {
+      "name": "grant_review-select-track",
+      "fixture": "grant_review.html",
+      "instruction": "Set Track to Education",
+      "values": {
+        "track": "Education"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Track"
+      }
+    },
+    {
+      "name": "grant_review-select-decision",
+      "fixture": "grant_review.html",
+      "instruction": "Choose Fund for Decision",
+      "values": {
+        "decision": "Fund"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Decision"
+      }
+    },
+    {
+      "name": "grant_review-select-region",
+      "fixture": "grant_review.html",
+      "instruction": "Change Region to Coastal",
+      "values": {
+        "region": "Coastal"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Region"
+      }
+    },
+    {
+      "name": "grant_review-select-cycle-blocked",
+      "fixture": "grant_review.html",
+      "instruction": "Choose the Cycle from the intake form",
+      "expect": {
+        "operation": "select",
+        "target_name": "Cycle",
+        "blocked": true
+      }
+    },
+    {
+      "name": "grant_review-scroll_down-footer",
+      "fixture": "grant_review.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "grant_review-scroll_up-heading",
+      "fixture": "grant_review.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "grant_review-back-history",
+      "fixture": "grant_review.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "grant_review-wait-settle",
+      "fixture": "grant_review.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "hotel_ops-click-mark-clean",
+      "fixture": "hotel_ops.html",
+      "instruction": "Press Mark clean to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Mark clean"
+      }
+    },
+    {
+      "name": "hotel_ops-click-report-damage",
+      "fixture": "hotel_ops.html",
+      "instruction": "Run Report damage for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Report damage"
+      }
+    },
+    {
+      "name": "hotel_ops-click-assign-room",
+      "fixture": "hotel_ops.html",
+      "instruction": "Open Assign room for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Assign room"
+      }
+    },
+    {
+      "name": "hotel_ops-click-extend-stay",
+      "fixture": "hotel_ops.html",
+      "instruction": "Start Extend stay now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Extend stay"
+      }
+    },
+    {
+      "name": "hotel_ops-click-print-key-card",
+      "fixture": "hotel_ops.html",
+      "instruction": "Use Print key card on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Print key card"
+      }
+    },
+    {
+      "name": "hotel_ops-click-rooms-nav",
+      "fixture": "hotel_ops.html",
+      "instruction": "Open the Rooms page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Rooms"
+      }
+    },
+    {
+      "name": "hotel_ops-click-previous-page-pagination",
+      "fixture": "hotel_ops.html",
+      "instruction": "Go to the Previous page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Previous page"
+      }
+    },
+    {
+      "name": "hotel_ops-fill-room-number",
+      "fixture": "hotel_ops.html",
+      "instruction": "Enter 412 in Room number",
+      "values": {
+        "room": "412"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Room number"
+      }
+    },
+    {
+      "name": "hotel_ops-fill-guest-name",
+      "fixture": "hotel_ops.html",
+      "instruction": "Put Nora Blake in the Guest name field",
+      "values": {
+        "guest": "Nora Blake"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Guest name"
+      }
+    },
+    {
+      "name": "hotel_ops-fill-arrival-date",
+      "fixture": "hotel_ops.html",
+      "instruction": "Type 2027-02-19 into Arrival date",
+      "values": {
+        "arrival": "2027-02-19"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Arrival date"
+      }
+    },
+    {
+      "name": "hotel_ops-fill-special-request",
+      "fixture": "hotel_ops.html",
+      "instruction": "Write Quiet floor in Special request",
+      "values": {
+        "request": "Quiet floor"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Special request"
+      }
+    },
+    {
+      "name": "hotel_ops-fill-housekeeper-name",
+      "fixture": "hotel_ops.html",
+      "instruction": "Add Mei Lin to Housekeeper name",
+      "values": {
+        "housekeeper": "Mei Lin"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Housekeeper name"
+      }
+    },
+    {
+      "name": "hotel_ops-select-room-type",
+      "fixture": "hotel_ops.html",
+      "instruction": "Set Room type to Deluxe",
+      "values": {
+        "room_type": "Deluxe"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Room type"
+      }
+    },
+    {
+      "name": "hotel_ops-select-room-status",
+      "fixture": "hotel_ops.html",
+      "instruction": "Choose Dirty for Room status",
+      "values": {
+        "room_status": "Dirty"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Room status"
+      }
+    },
+    {
+      "name": "hotel_ops-select-floor",
+      "fixture": "hotel_ops.html",
+      "instruction": "Change Floor to Fourth",
+      "values": {
+        "floor": "Fourth"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Floor"
+      }
+    },
+    {
+      "name": "hotel_ops-select-shift",
+      "fixture": "hotel_ops.html",
+      "instruction": "Pick Morning in the Shift dropdown",
+      "values": {
+        "shift": "Morning"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Shift"
+      }
+    },
+    {
+      "name": "hotel_ops-scroll_down-footer",
+      "fixture": "hotel_ops.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "hotel_ops-scroll_up-heading",
+      "fixture": "hotel_ops.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "hotel_ops-back-history",
+      "fixture": "hotel_ops.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "hotel_ops-wait-settle",
+      "fixture": "hotel_ops.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "insurance_quote-click-generate-quote",
+      "fixture": "insurance_quote.html",
+      "instruction": "Press Generate quote to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Generate quote"
+      }
+    },
+    {
+      "name": "insurance_quote-click-bind-policy",
+      "fixture": "insurance_quote.html",
+      "instruction": "Run Bind policy for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Bind policy"
+      }
+    },
+    {
+      "name": "insurance_quote-click-add-driver",
+      "fixture": "insurance_quote.html",
+      "instruction": "Open Add driver for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Add driver"
+      }
+    },
+    {
+      "name": "insurance_quote-click-compare-plans",
+      "fixture": "insurance_quote.html",
+      "instruction": "Start Compare plans now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Compare plans"
+      }
+    },
+    {
+      "name": "insurance_quote-click-email-quote",
+      "fixture": "insurance_quote.html",
+      "instruction": "Use Email quote on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Email quote"
+      }
+    },
+    {
+      "name": "insurance_quote-click-quotes-nav",
+      "fixture": "insurance_quote.html",
+      "instruction": "Open the Quotes page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Quotes"
+      }
+    },
+    {
+      "name": "insurance_quote-click-next-page-pagination",
+      "fixture": "insurance_quote.html",
+      "instruction": "Go to the Next page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Next page"
+      }
+    },
+    {
+      "name": "insurance_quote-fill-quote-id",
+      "fixture": "insurance_quote.html",
+      "instruction": "Enter Q-55219 in Quote id",
+      "values": {
+        "quote": "Q-55219"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Quote id"
+      }
+    },
+    {
+      "name": "insurance_quote-fill-customer-name",
+      "fixture": "insurance_quote.html",
+      "instruction": "Put Owen Park in the Customer name field",
+      "values": {
+        "customer": "Owen Park"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Customer name"
+      }
+    },
+    {
+      "name": "insurance_quote-fill-vehicle-year",
+      "fixture": "insurance_quote.html",
+      "instruction": "Type 2022 into Vehicle year",
+      "values": {
+        "year": "2022"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Vehicle year"
+      }
+    },
+    {
+      "name": "insurance_quote-fill-coverage-amount",
+      "fixture": "insurance_quote.html",
+      "instruction": "Write 250000 in Coverage amount",
+      "values": {
+        "coverage": "250000"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Coverage amount"
+      }
+    },
+    {
+      "name": "insurance_quote-fill-agent-note-blocked",
+      "fixture": "insurance_quote.html",
+      "instruction": "Fill Agent note with the reference from the email",
+      "expect": {
+        "operation": "fill",
+        "target_name": "Agent note",
+        "blocked": true
+      }
+    },
+    {
+      "name": "insurance_quote-select-product",
+      "fixture": "insurance_quote.html",
+      "instruction": "Set Product to Auto",
+      "values": {
+        "product": "Auto"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Product"
+      }
+    },
+    {
+      "name": "insurance_quote-select-term",
+      "fixture": "insurance_quote.html",
+      "instruction": "Choose One year for Term",
+      "values": {
+        "term": "One year"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Term"
+      }
+    },
+    {
+      "name": "insurance_quote-select-deductible",
+      "fixture": "insurance_quote.html",
+      "instruction": "Change Deductible to 1000",
+      "values": {
+        "deductible": "1000"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Deductible"
+      }
+    },
+    {
+      "name": "insurance_quote-select-payment-blocked",
+      "fixture": "insurance_quote.html",
+      "instruction": "Choose the Payment from the intake form",
+      "expect": {
+        "operation": "select",
+        "target_name": "Payment",
+        "blocked": true
+      }
+    },
+    {
+      "name": "insurance_quote-scroll_down-footer",
+      "fixture": "insurance_quote.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "insurance_quote-scroll_up-heading",
+      "fixture": "insurance_quote.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "insurance_quote-back-history",
+      "fixture": "insurance_quote.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "insurance_quote-wait-settle",
+      "fixture": "insurance_quote.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "lab_inventory-click-log-sample",
+      "fixture": "lab_inventory.html",
+      "instruction": "Press Log sample to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Log sample"
+      }
+    },
+    {
+      "name": "lab_inventory-click-reserve-reagent",
+      "fixture": "lab_inventory.html",
+      "instruction": "Run Reserve reagent for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Reserve reagent"
+      }
+    },
+    {
+      "name": "lab_inventory-click-flag-expired",
+      "fixture": "lab_inventory.html",
+      "instruction": "Open Flag expired for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Flag expired"
+      }
+    },
+    {
+      "name": "lab_inventory-click-calibrate-analyzer",
+      "fixture": "lab_inventory.html",
+      "instruction": "Start Calibrate analyzer now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Calibrate analyzer"
+      }
+    },
+    {
+      "name": "lab_inventory-click-export-inventory",
+      "fixture": "lab_inventory.html",
+      "instruction": "Use Export inventory on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Export inventory"
+      }
+    },
+    {
+      "name": "lab_inventory-click-samples-nav",
+      "fixture": "lab_inventory.html",
+      "instruction": "Open the Samples page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Samples"
+      }
+    },
+    {
+      "name": "lab_inventory-click-previous-page-pagination",
+      "fixture": "lab_inventory.html",
+      "instruction": "Go to the Previous page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Previous page"
+      }
+    },
+    {
+      "name": "lab_inventory-fill-sample-id",
+      "fixture": "lab_inventory.html",
+      "instruction": "Enter LAB-9914 in Sample id",
+      "values": {
+        "sample": "LAB-9914"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Sample id"
+      }
+    },
+    {
+      "name": "lab_inventory-fill-reagent-name",
+      "fixture": "lab_inventory.html",
+      "instruction": "Put Buffer P2 in the Reagent name field",
+      "values": {
+        "reagent": "Buffer P2"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Reagent name"
+      }
+    },
+    {
+      "name": "lab_inventory-fill-lot-number",
+      "fixture": "lab_inventory.html",
+      "instruction": "Type L-3381 into Lot number",
+      "values": {
+        "lot": "L-3381"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Lot number"
+      }
+    },
+    {
+      "name": "lab_inventory-fill-storage-temp",
+      "fixture": "lab_inventory.html",
+      "instruction": "Write Minus 20 in Storage temp",
+      "values": {
+        "temp": "Minus 20"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Storage temp"
+      }
+    },
+    {
+      "name": "lab_inventory-fill-technician-name-blocked",
+      "fixture": "lab_inventory.html",
+      "instruction": "Fill Technician name with the reference from the email",
+      "expect": {
+        "operation": "fill",
+        "target_name": "Technician name",
+        "blocked": true
+      }
+    },
+    {
+      "name": "lab_inventory-select-assay",
+      "fixture": "lab_inventory.html",
+      "instruction": "Set Assay to PCR",
+      "values": {
+        "assay": "PCR"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Assay"
+      }
+    },
+    {
+      "name": "lab_inventory-select-storage",
+      "fixture": "lab_inventory.html",
+      "instruction": "Choose Freezer for Storage",
+      "values": {
+        "storage": "Freezer"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Storage"
+      }
+    },
+    {
+      "name": "lab_inventory-select-hazard",
+      "fixture": "lab_inventory.html",
+      "instruction": "Change Hazard to Biohazard",
+      "values": {
+        "hazard": "Biohazard"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Hazard"
+      }
+    },
+    {
+      "name": "lab_inventory-select-stock-status-blocked",
+      "fixture": "lab_inventory.html",
+      "instruction": "Choose the Stock status from the intake form",
+      "expect": {
+        "operation": "select",
+        "target_name": "Stock status",
+        "blocked": true
+      }
+    },
+    {
+      "name": "lab_inventory-scroll_down-footer",
+      "fixture": "lab_inventory.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "lab_inventory-scroll_up-heading",
+      "fixture": "lab_inventory.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "lab_inventory-back-history",
+      "fixture": "lab_inventory.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "lab_inventory-wait-settle",
+      "fixture": "lab_inventory.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "logistics_hub-click-book-pickup",
+      "fixture": "logistics_hub.html",
+      "instruction": "Press Book pickup to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Book pickup"
+      }
+    },
+    {
+      "name": "logistics_hub-click-split-shipment",
+      "fixture": "logistics_hub.html",
+      "instruction": "Run Split shipment for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Split shipment"
+      }
+    },
+    {
+      "name": "logistics_hub-click-reroute-load",
+      "fixture": "logistics_hub.html",
+      "instruction": "Open Reroute load for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Reroute load"
+      }
+    },
+    {
+      "name": "logistics_hub-click-print-labels",
+      "fixture": "logistics_hub.html",
+      "instruction": "Start Print labels now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Print labels"
+      }
+    },
+    {
+      "name": "logistics_hub-click-release-hold",
+      "fixture": "logistics_hub.html",
+      "instruction": "Use Release hold on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Release hold"
+      }
+    },
+    {
+      "name": "logistics_hub-click-shipments-nav",
+      "fixture": "logistics_hub.html",
+      "instruction": "Open the Shipments page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Shipments"
+      }
+    },
+    {
+      "name": "logistics_hub-click-next-page-pagination",
+      "fixture": "logistics_hub.html",
+      "instruction": "Go to the Next page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Next page"
+      }
+    },
+    {
+      "name": "logistics_hub-fill-shipment-id",
+      "fixture": "logistics_hub.html",
+      "instruction": "Enter SH-44820 in Shipment id",
+      "values": {
+        "shipment": "SH-44820"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Shipment id"
+      }
+    },
+    {
+      "name": "logistics_hub-fill-consignee-name",
+      "fixture": "logistics_hub.html",
+      "instruction": "Put Apex Retail in the Consignee name field",
+      "values": {
+        "consignee": "Apex Retail"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Consignee name"
+      }
+    },
+    {
+      "name": "logistics_hub-fill-pickup-city",
+      "fixture": "logistics_hub.html",
+      "instruction": "Type Dayton into Pickup city",
+      "values": {
+        "city": "Dayton"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Pickup city"
+      }
+    },
+    {
+      "name": "logistics_hub-fill-weight-kg",
+      "fixture": "logistics_hub.html",
+      "instruction": "Write 1240 in Weight kg",
+      "values": {
+        "weight": "1240"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Weight kg"
+      }
+    },
+    {
+      "name": "logistics_hub-fill-handling-note",
+      "fixture": "logistics_hub.html",
+      "instruction": "Add Keep upright to Handling note",
+      "values": {
+        "note": "Keep upright"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Handling note"
+      }
+    },
+    {
+      "name": "logistics_hub-select-service",
+      "fixture": "logistics_hub.html",
+      "instruction": "Set Service to Air",
+      "values": {
+        "service": "Air"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Service"
+      }
+    },
+    {
+      "name": "logistics_hub-select-route",
+      "fixture": "logistics_hub.html",
+      "instruction": "Choose Express for Route",
+      "values": {
+        "route": "Express"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Route"
+      }
+    },
+    {
+      "name": "logistics_hub-select-shipment-status",
+      "fixture": "logistics_hub.html",
+      "instruction": "Change Shipment status to Held",
+      "values": {
+        "shipment_status": "Held"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Shipment status"
+      }
+    },
+    {
+      "name": "logistics_hub-select-packaging",
+      "fixture": "logistics_hub.html",
+      "instruction": "Pick Crate in the Packaging dropdown",
+      "values": {
+        "packaging": "Crate"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Packaging"
+      }
+    },
+    {
+      "name": "logistics_hub-scroll_down-footer",
+      "fixture": "logistics_hub.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "logistics_hub-scroll_up-heading",
+      "fixture": "logistics_hub.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "logistics_hub-back-history",
+      "fixture": "logistics_hub.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "logistics_hub-wait-settle",
+      "fixture": "logistics_hub.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "membership_admin-click-renew-membership",
+      "fixture": "membership_admin.html",
+      "instruction": "Press Renew membership to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Renew membership"
+      }
+    },
+    {
+      "name": "membership_admin-click-cancel-plan",
+      "fixture": "membership_admin.html",
+      "instruction": "Run Cancel plan for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Cancel plan"
+      }
+    },
+    {
+      "name": "membership_admin-click-send-reminder",
+      "fixture": "membership_admin.html",
+      "instruction": "Open Send reminder for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Send reminder"
+      }
+    },
+    {
+      "name": "membership_admin-click-upgrade-tier",
+      "fixture": "membership_admin.html",
+      "instruction": "Start Upgrade tier now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Upgrade tier"
+      }
+    },
+    {
+      "name": "membership_admin-click-export-roster",
+      "fixture": "membership_admin.html",
+      "instruction": "Use Export roster on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Export roster"
+      }
+    },
+    {
+      "name": "membership_admin-click-members-nav",
+      "fixture": "membership_admin.html",
+      "instruction": "Open the Members page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Members"
+      }
+    },
+    {
+      "name": "membership_admin-click-previous-page-pagination",
+      "fixture": "membership_admin.html",
+      "instruction": "Go to the Previous page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Previous page"
+      }
+    },
+    {
+      "name": "membership_admin-fill-member-id",
+      "fixture": "membership_admin.html",
+      "instruction": "Enter M-2081 in Member id",
+      "values": {
+        "member_id": "M-2081"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Member id"
+      }
+    },
+    {
+      "name": "membership_admin-fill-member-name",
+      "fixture": "membership_admin.html",
+      "instruction": "Put Talia Brooks in the Member name field",
+      "values": {
+        "member": "Talia Brooks"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Member name"
+      }
+    },
+    {
+      "name": "membership_admin-fill-join-date",
+      "fixture": "membership_admin.html",
+      "instruction": "Type 2024-06-03 into Join date",
+      "values": {
+        "join": "2024-06-03"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Join date"
+      }
+    },
+    {
+      "name": "membership_admin-fill-email-address",
+      "fixture": "membership_admin.html",
+      "instruction": "Write talia@example.org in Email address",
+      "values": {
+        "email": "talia@example.org"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Email address"
+      }
+    },
+    {
+      "name": "membership_admin-fill-note-blocked",
+      "fixture": "membership_admin.html",
+      "instruction": "Fill Note with the reference from the email",
+      "expect": {
+        "operation": "fill",
+        "target_name": "Note",
+        "blocked": true
+      }
+    },
+    {
+      "name": "membership_admin-select-plan",
+      "fixture": "membership_admin.html",
+      "instruction": "Set Plan to Plus",
+      "values": {
+        "plan": "Plus"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Plan"
+      }
+    },
+    {
+      "name": "membership_admin-select-billing",
+      "fixture": "membership_admin.html",
+      "instruction": "Choose Annual for Billing",
+      "values": {
+        "billing": "Annual"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Billing"
+      }
+    },
+    {
+      "name": "membership_admin-select-member-status",
+      "fixture": "membership_admin.html",
+      "instruction": "Change Member status to Paused",
+      "values": {
+        "member_status": "Paused"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Member status"
+      }
+    },
+    {
+      "name": "membership_admin-select-chapter-blocked",
+      "fixture": "membership_admin.html",
+      "instruction": "Choose the Chapter from the intake form",
+      "expect": {
+        "operation": "select",
+        "target_name": "Chapter",
+        "blocked": true
+      }
+    },
+    {
+      "name": "membership_admin-scroll_down-footer",
+      "fixture": "membership_admin.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "membership_admin-scroll_up-heading",
+      "fixture": "membership_admin.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "membership_admin-back-history",
+      "fixture": "membership_admin.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "membership_admin-wait-settle",
+      "fixture": "membership_admin.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "newsroom-click-publish-story",
+      "fixture": "newsroom.html",
+      "instruction": "Press Publish story to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Publish story"
+      }
+    },
+    {
+      "name": "newsroom-click-save-draft",
+      "fixture": "newsroom.html",
+      "instruction": "Run Save draft for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Save draft"
+      }
+    },
+    {
+      "name": "newsroom-click-request-review",
+      "fixture": "newsroom.html",
+      "instruction": "Open Request review for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Request review"
+      }
+    },
+    {
+      "name": "newsroom-click-feature-article",
+      "fixture": "newsroom.html",
+      "instruction": "Start Feature article now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Feature article"
+      }
+    },
+    {
+      "name": "newsroom-click-download-assets",
+      "fixture": "newsroom.html",
+      "instruction": "Use Download assets on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Download assets"
+      }
+    },
+    {
+      "name": "newsroom-click-stories-nav",
+      "fixture": "newsroom.html",
+      "instruction": "Open the Stories page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Stories"
+      }
+    },
+    {
+      "name": "newsroom-click-next-page-pagination",
+      "fixture": "newsroom.html",
+      "instruction": "Go to the Next page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Next page"
+      }
+    },
+    {
+      "name": "newsroom-fill-headline",
+      "fixture": "newsroom.html",
+      "instruction": "Enter Harbor transit plan in Headline",
+      "values": {
+        "headline": "Harbor transit plan"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Headline"
+      }
+    },
+    {
+      "name": "newsroom-fill-author-name",
+      "fixture": "newsroom.html",
+      "instruction": "Put Ines Duarte in the Author name field",
+      "values": {
+        "author": "Ines Duarte"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Author name"
+      }
+    },
+    {
+      "name": "newsroom-fill-slug",
+      "fixture": "newsroom.html",
+      "instruction": "Type harbor-transit-plan into Slug",
+      "values": {
+        "slug": "harbor-transit-plan"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Slug"
+      }
+    },
+    {
+      "name": "newsroom-fill-publish-date",
+      "fixture": "newsroom.html",
+      "instruction": "Write 2027-04-02 in Publish date",
+      "values": {
+        "publish": "2027-04-02"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Publish date"
+      }
+    },
+    {
+      "name": "newsroom-fill-summary-blocked",
+      "fixture": "newsroom.html",
+      "instruction": "Fill Summary with the reference from the email",
+      "expect": {
+        "operation": "fill",
+        "target_name": "Summary",
+        "blocked": true
+      }
+    },
+    {
+      "name": "newsroom-select-section",
+      "fixture": "newsroom.html",
+      "instruction": "Set Section to Business",
+      "values": {
+        "section": "Business"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Section"
+      }
+    },
+    {
+      "name": "newsroom-select-story-status",
+      "fixture": "newsroom.html",
+      "instruction": "Choose Review for Story status",
+      "values": {
+        "story_status": "Review"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Story status"
+      }
+    },
+    {
+      "name": "newsroom-select-format",
+      "fixture": "newsroom.html",
+      "instruction": "Change Format to Video",
+      "values": {
+        "format": "Video"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Format"
+      }
+    },
+    {
+      "name": "newsroom-select-audience-blocked",
+      "fixture": "newsroom.html",
+      "instruction": "Choose the Audience from the intake form",
+      "expect": {
+        "operation": "select",
+        "target_name": "Audience",
+        "blocked": true
+      }
+    },
+    {
+      "name": "newsroom-scroll_down-footer",
+      "fixture": "newsroom.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "newsroom-scroll_up-heading",
+      "fixture": "newsroom.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "newsroom-back-history",
+      "fixture": "newsroom.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "newsroom-wait-settle",
+      "fixture": "newsroom.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "pharmacy_queue-click-fill-prescription",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Press Fill prescription to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Fill prescription"
+      }
+    },
+    {
+      "name": "pharmacy_queue-click-verify-order",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Run Verify order for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Verify order"
+      }
+    },
+    {
+      "name": "pharmacy_queue-click-call-patient",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Open Call patient for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Call patient"
+      }
+    },
+    {
+      "name": "pharmacy_queue-click-reprint-label",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Start Reprint label now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Reprint label"
+      }
+    },
+    {
+      "name": "pharmacy_queue-click-flag-interaction",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Use Flag interaction on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Flag interaction"
+      }
+    },
+    {
+      "name": "pharmacy_queue-click-queue-nav",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Open the Queue page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Queue"
+      }
+    },
+    {
+      "name": "pharmacy_queue-click-previous-page-pagination",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Go to the Previous page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Previous page"
+      }
+    },
+    {
+      "name": "pharmacy_queue-fill-prescription-number",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Enter RX-70218 in Prescription number",
+      "values": {
+        "prescription": "RX-70218"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Prescription number"
+      }
+    },
+    {
+      "name": "pharmacy_queue-fill-patient-name",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Put Hana Kim in the Patient name field",
+      "values": {
+        "patient": "Hana Kim"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Patient name"
+      }
+    },
+    {
+      "name": "pharmacy_queue-fill-drug-name",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Type Metformin into Drug name",
+      "values": {
+        "drug": "Metformin"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Drug name"
+      }
+    },
+    {
+      "name": "pharmacy_queue-fill-dose",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Write 500 mg in Dose",
+      "values": {
+        "dose": "500 mg"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Dose"
+      }
+    },
+    {
+      "name": "pharmacy_queue-fill-pharmacist-note",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Add Check refills to Pharmacist note",
+      "values": {
+        "note": "Check refills"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Pharmacist note"
+      }
+    },
+    {
+      "name": "pharmacy_queue-select-priority",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Set Priority to Urgent",
+      "values": {
+        "priority": "Urgent"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Priority"
+      }
+    },
+    {
+      "name": "pharmacy_queue-select-order-status",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Choose Filling for Order status",
+      "values": {
+        "order_status": "Filling"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Order status"
+      }
+    },
+    {
+      "name": "pharmacy_queue-select-pickup",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Change Pickup to Drive through",
+      "values": {
+        "pickup": "Drive through"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Pickup"
+      }
+    },
+    {
+      "name": "pharmacy_queue-select-insurance",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Pick Primary in the Insurance dropdown",
+      "values": {
+        "insurance": "Primary"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Insurance"
+      }
+    },
+    {
+      "name": "pharmacy_queue-scroll_down-footer",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "pharmacy_queue-scroll_up-heading",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "pharmacy_queue-back-history",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "pharmacy_queue-wait-settle",
+      "fixture": "pharmacy_queue.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "procurement-click-create-order",
+      "fixture": "procurement.html",
+      "instruction": "Press Create order to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Create order"
+      }
+    },
+    {
+      "name": "procurement-click-approve-request",
+      "fixture": "procurement.html",
+      "instruction": "Run Approve request for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Approve request"
+      }
+    },
+    {
+      "name": "procurement-click-request-quotes",
+      "fixture": "procurement.html",
+      "instruction": "Open Request quotes for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Request quotes"
+      }
+    },
+    {
+      "name": "procurement-click-receive-goods",
+      "fixture": "procurement.html",
+      "instruction": "Start Receive goods now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Receive goods"
+      }
+    },
+    {
+      "name": "procurement-click-export-spend",
+      "fixture": "procurement.html",
+      "instruction": "Use Export spend on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Export spend"
+      }
+    },
+    {
+      "name": "procurement-click-requests-nav",
+      "fixture": "procurement.html",
+      "instruction": "Open the Requests page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Requests"
+      }
+    },
+    {
+      "name": "procurement-click-next-page-pagination",
+      "fixture": "procurement.html",
+      "instruction": "Go to the Next page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Next page"
+      }
+    },
+    {
+      "name": "procurement-fill-request-id",
+      "fixture": "procurement.html",
+      "instruction": "Enter PR-3307 in Request id",
+      "values": {
+        "request": "PR-3307"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Request id"
+      }
+    },
+    {
+      "name": "procurement-fill-supplier-name",
+      "fixture": "procurement.html",
+      "instruction": "Put Baltic Supply in the Supplier name field",
+      "values": {
+        "supplier": "Baltic Supply"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Supplier name"
+      }
+    },
+    {
+      "name": "procurement-fill-item-description",
+      "fixture": "procurement.html",
+      "instruction": "Type Steel brackets into Item description",
+      "values": {
+        "item": "Steel brackets"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Item description"
+      }
+    },
+    {
+      "name": "procurement-fill-quantity",
+      "fixture": "procurement.html",
+      "instruction": "Write 240 in Quantity",
+      "values": {
+        "quantity": "240"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Quantity"
+      }
+    },
+    {
+      "name": "procurement-fill-cost-center-blocked",
+      "fixture": "procurement.html",
+      "instruction": "Fill Cost center with the reference from the email",
+      "expect": {
+        "operation": "fill",
+        "target_name": "Cost center",
+        "blocked": true
+      }
+    },
+    {
+      "name": "procurement-select-category",
+      "fixture": "procurement.html",
+      "instruction": "Set Category to Hardware",
+      "values": {
+        "category": "Hardware"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Category"
+      }
+    },
+    {
+      "name": "procurement-select-approval",
+      "fixture": "procurement.html",
+      "instruction": "Choose Approved for Approval",
+      "values": {
+        "approval": "Approved"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Approval"
+      }
+    },
+    {
+      "name": "procurement-select-delivery",
+      "fixture": "procurement.html",
+      "instruction": "Change Delivery to Expedited",
+      "values": {
+        "delivery": "Expedited"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Delivery"
+      }
+    },
+    {
+      "name": "procurement-select-currency-blocked",
+      "fixture": "procurement.html",
+      "instruction": "Choose the Currency from the intake form",
+      "expect": {
+        "operation": "select",
+        "target_name": "Currency",
+        "blocked": true
+      }
+    },
+    {
+      "name": "procurement-scroll_down-footer",
+      "fixture": "procurement.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "procurement-scroll_up-heading",
+      "fixture": "procurement.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "procurement-back-history",
+      "fixture": "procurement.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "procurement-wait-settle",
+      "fixture": "procurement.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "property_listings-click-schedule-tour",
+      "fixture": "property_listings.html",
+      "instruction": "Press Schedule tour to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Schedule tour"
+      }
+    },
+    {
+      "name": "property_listings-click-submit-offer",
+      "fixture": "property_listings.html",
+      "instruction": "Run Submit offer for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Submit offer"
+      }
+    },
+    {
+      "name": "property_listings-click-share-listing",
+      "fixture": "property_listings.html",
+      "instruction": "Open Share listing for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Share listing"
+      }
+    },
+    {
+      "name": "property_listings-click-mark-sold",
+      "fixture": "property_listings.html",
+      "instruction": "Start Mark sold now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Mark sold"
+      }
+    },
+    {
+      "name": "property_listings-click-download-flyer",
+      "fixture": "property_listings.html",
+      "instruction": "Use Download flyer on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Download flyer"
+      }
+    },
+    {
+      "name": "property_listings-click-listings-nav",
+      "fixture": "property_listings.html",
+      "instruction": "Open the Listings page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Listings"
+      }
+    },
+    {
+      "name": "property_listings-click-previous-page-pagination",
+      "fixture": "property_listings.html",
+      "instruction": "Go to the Previous page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Previous page"
+      }
+    },
+    {
+      "name": "property_listings-fill-listing-id",
+      "fixture": "property_listings.html",
+      "instruction": "Enter PL-6620 in Listing id",
+      "values": {
+        "listing": "PL-6620"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Listing id"
+      }
+    },
+    {
+      "name": "property_listings-fill-address",
+      "fixture": "property_listings.html",
+      "instruction": "Put 18 Cedar Lane in the Address field",
+      "values": {
+        "address": "18 Cedar Lane"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Address"
+      }
+    },
+    {
+      "name": "property_listings-fill-asking-price",
+      "fixture": "property_listings.html",
+      "instruction": "Type 425000 into Asking price",
+      "values": {
+        "price": "425000"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Asking price"
+      }
+    },
+    {
+      "name": "property_listings-fill-agent-name",
+      "fixture": "property_listings.html",
+      "instruction": "Write Marco Silva in Agent name",
+      "values": {
+        "agent": "Marco Silva"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Agent name"
+      }
+    },
+    {
+      "name": "property_listings-fill-feature-note-blocked",
+      "fixture": "property_listings.html",
+      "instruction": "Fill Feature note with the reference from the email",
+      "expect": {
+        "operation": "fill",
+        "target_name": "Feature note",
+        "blocked": true
+      }
+    },
+    {
+      "name": "property_listings-select-property-type",
+      "fixture": "property_listings.html",
+      "instruction": "Set Property type to Townhouse",
+      "values": {
+        "property_type": "Townhouse"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Property type"
+      }
+    },
+    {
+      "name": "property_listings-select-bedrooms",
+      "fixture": "property_listings.html",
+      "instruction": "Choose Three for Bedrooms",
+      "values": {
+        "bedrooms": "Three"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Bedrooms"
+      }
+    },
+    {
+      "name": "property_listings-select-listing-status",
+      "fixture": "property_listings.html",
+      "instruction": "Change Listing status to Pending",
+      "values": {
+        "listing_status": "Pending"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Listing status"
+      }
+    },
+    {
+      "name": "property_listings-select-neighborhood-blocked",
+      "fixture": "property_listings.html",
+      "instruction": "Choose the Neighborhood from the intake form",
+      "expect": {
+        "operation": "select",
+        "target_name": "Neighborhood",
+        "blocked": true
+      }
+    },
+    {
+      "name": "property_listings-scroll_down-footer",
+      "fixture": "property_listings.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "property_listings-scroll_up-heading",
+      "fixture": "property_listings.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "property_listings-back-history",
+      "fixture": "property_listings.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "property_listings-wait-settle",
+      "fixture": "property_listings.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "recruiting-click-move-to-interview",
+      "fixture": "recruiting.html",
+      "instruction": "Press Move to interview to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Move to interview"
+      }
+    },
+    {
+      "name": "recruiting-click-reject-candidate",
+      "fixture": "recruiting.html",
+      "instruction": "Run Reject candidate for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Reject candidate"
+      }
+    },
+    {
+      "name": "recruiting-click-send-offer",
+      "fixture": "recruiting.html",
+      "instruction": "Open Send offer for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Send offer"
+      }
+    },
+    {
+      "name": "recruiting-click-schedule-screen",
+      "fixture": "recruiting.html",
+      "instruction": "Start Schedule screen now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Schedule screen"
+      }
+    },
+    {
+      "name": "recruiting-click-export-pipeline",
+      "fixture": "recruiting.html",
+      "instruction": "Use Export pipeline on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Export pipeline"
+      }
+    },
+    {
+      "name": "recruiting-click-candidates-nav",
+      "fixture": "recruiting.html",
+      "instruction": "Open the Candidates page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Candidates"
+      }
+    },
+    {
+      "name": "recruiting-click-next-page-pagination",
+      "fixture": "recruiting.html",
+      "instruction": "Go to the Next page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Next page"
+      }
+    },
+    {
+      "name": "recruiting-fill-candidate-name",
+      "fixture": "recruiting.html",
+      "instruction": "Enter Jordan Ellis in Candidate name",
+      "values": {
+        "candidate": "Jordan Ellis"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Candidate name"
+      }
+    },
+    {
+      "name": "recruiting-fill-role-title",
+      "fixture": "recruiting.html",
+      "instruction": "Put Staff engineer in the Role title field",
+      "values": {
+        "role": "Staff engineer"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Role title"
+      }
+    },
+    {
+      "name": "recruiting-fill-recruiter-name",
+      "fixture": "recruiting.html",
+      "instruction": "Type Sofia Marin into Recruiter name",
+      "values": {
+        "recruiter": "Sofia Marin"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Recruiter name"
+      }
+    },
+    {
+      "name": "recruiting-fill-interview-date",
+      "fixture": "recruiting.html",
+      "instruction": "Write 2027-05-11 in Interview date",
+      "values": {
+        "interview": "2027-05-11"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Interview date"
+      }
+    },
+    {
+      "name": "recruiting-fill-feedback-note",
+      "fixture": "recruiting.html",
+      "instruction": "Add Strong systems design to Feedback note",
+      "values": {
+        "feedback": "Strong systems design"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Feedback note"
+      }
+    },
+    {
+      "name": "recruiting-select-stage",
+      "fixture": "recruiting.html",
+      "instruction": "Set Stage to Interview",
+      "values": {
+        "stage": "Interview"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Stage"
+      }
+    },
+    {
+      "name": "recruiting-select-source",
+      "fixture": "recruiting.html",
+      "instruction": "Choose Referral for Source",
+      "values": {
+        "source": "Referral"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Source"
+      }
+    },
+    {
+      "name": "recruiting-select-location",
+      "fixture": "recruiting.html",
+      "instruction": "Change Location to Remote",
+      "values": {
+        "location": "Remote"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Location"
+      }
+    },
+    {
+      "name": "recruiting-select-level",
+      "fixture": "recruiting.html",
+      "instruction": "Pick Senior in the Level dropdown",
+      "values": {
+        "level": "Senior"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Level"
+      }
+    },
+    {
+      "name": "recruiting-scroll_down-footer",
+      "fixture": "recruiting.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "recruiting-scroll_up-heading",
+      "fixture": "recruiting.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "recruiting-back-history",
+      "fixture": "recruiting.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "recruiting-wait-settle",
+      "fixture": "recruiting.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "reservations-click-seat-party",
+      "fixture": "reservations.html",
+      "instruction": "Press Seat party to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Seat party"
+      }
+    },
+    {
+      "name": "reservations-click-add-to-queue",
+      "fixture": "reservations.html",
+      "instruction": "Run Add to queue for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Add to queue"
+      }
+    },
+    {
+      "name": "reservations-click-cancel-reservation",
+      "fixture": "reservations.html",
+      "instruction": "Open Cancel reservation for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Cancel reservation"
+      }
+    },
+    {
+      "name": "reservations-click-move-table",
+      "fixture": "reservations.html",
+      "instruction": "Start Move table now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Move table"
+      }
+    },
+    {
+      "name": "reservations-click-print-ticket",
+      "fixture": "reservations.html",
+      "instruction": "Use Print ticket on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Print ticket"
+      }
+    },
+    {
+      "name": "reservations-click-tables-nav",
+      "fixture": "reservations.html",
+      "instruction": "Open the Tables page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Tables"
+      }
+    },
+    {
+      "name": "reservations-click-previous-page-pagination",
+      "fixture": "reservations.html",
+      "instruction": "Go to the Previous page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Previous page"
+      }
+    },
+    {
+      "name": "reservations-fill-reservation-name",
+      "fixture": "reservations.html",
+      "instruction": "Enter Ada Flores in Reservation name",
+      "values": {
+        "name": "Ada Flores"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Reservation name"
+      }
+    },
+    {
+      "name": "reservations-fill-party-size",
+      "fixture": "reservations.html",
+      "instruction": "Put 6 in the Party size field",
+      "values": {
+        "party": "6"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Party size"
+      }
+    },
+    {
+      "name": "reservations-fill-time",
+      "fixture": "reservations.html",
+      "instruction": "Type 7:30 PM into Time",
+      "values": {
+        "time": "7:30 PM"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Time"
+      }
+    },
+    {
+      "name": "reservations-fill-phone-number",
+      "fixture": "reservations.html",
+      "instruction": "Write 555-0188 in Phone number",
+      "values": {
+        "phone": "555-0188"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Phone number"
+      }
+    },
+    {
+      "name": "reservations-fill-note-blocked",
+      "fixture": "reservations.html",
+      "instruction": "Fill Note with the reference from the email",
+      "expect": {
+        "operation": "fill",
+        "target_name": "Note",
+        "blocked": true
+      }
+    },
+    {
+      "name": "reservations-select-service",
+      "fixture": "reservations.html",
+      "instruction": "Set Service to Dinner",
+      "values": {
+        "service": "Dinner"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Service"
+      }
+    },
+    {
+      "name": "reservations-select-area",
+      "fixture": "reservations.html",
+      "instruction": "Choose Patio for Area",
+      "values": {
+        "area": "Patio"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Area"
+      }
+    },
+    {
+      "name": "reservations-select-reservation-status",
+      "fixture": "reservations.html",
+      "instruction": "Change Reservation status to Booked",
+      "values": {
+        "reservation_status": "Booked"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Reservation status"
+      }
+    },
+    {
+      "name": "reservations-select-occasion-blocked",
+      "fixture": "reservations.html",
+      "instruction": "Choose the Occasion from the intake form",
+      "expect": {
+        "operation": "select",
+        "target_name": "Occasion",
+        "blocked": true
+      }
+    },
+    {
+      "name": "reservations-scroll_down-footer",
+      "fixture": "reservations.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "reservations-scroll_up-heading",
+      "fixture": "reservations.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "reservations-back-history",
+      "fixture": "reservations.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "reservations-wait-settle",
+      "fixture": "reservations.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "retail_orders-click-fulfill-order",
+      "fixture": "retail_orders.html",
+      "instruction": "Press Fulfill order to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Fulfill order"
+      }
+    },
+    {
+      "name": "retail_orders-click-refund-order",
+      "fixture": "retail_orders.html",
+      "instruction": "Run Refund order for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Refund order"
+      }
+    },
+    {
+      "name": "retail_orders-click-print-packing-slip",
+      "fixture": "retail_orders.html",
+      "instruction": "Open Print packing slip for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Print packing slip"
+      }
+    },
+    {
+      "name": "retail_orders-click-split-order",
+      "fixture": "retail_orders.html",
+      "instruction": "Start Split order now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Split order"
+      }
+    },
+    {
+      "name": "retail_orders-click-export-orders",
+      "fixture": "retail_orders.html",
+      "instruction": "Use Export orders on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Export orders"
+      }
+    },
+    {
+      "name": "retail_orders-click-orders-nav",
+      "fixture": "retail_orders.html",
+      "instruction": "Open the Orders page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Orders"
+      }
+    },
+    {
+      "name": "retail_orders-click-next-page-pagination",
+      "fixture": "retail_orders.html",
+      "instruction": "Go to the Next page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Next page"
+      }
+    },
+    {
+      "name": "retail_orders-fill-order-number",
+      "fixture": "retail_orders.html",
+      "instruction": "Enter R-90114 in Order number",
+      "values": {
+        "order": "R-90114"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Order number"
+      }
+    },
+    {
+      "name": "retail_orders-fill-customer-name",
+      "fixture": "retail_orders.html",
+      "instruction": "Put Eli Turner in the Customer name field",
+      "values": {
+        "customer": "Eli Turner"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Customer name"
+      }
+    },
+    {
+      "name": "retail_orders-fill-shipping-city",
+      "fixture": "retail_orders.html",
+      "instruction": "Type Boise into Shipping city",
+      "values": {
+        "city": "Boise"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Shipping city"
+      }
+    },
+    {
+      "name": "retail_orders-fill-tracking-number",
+      "fixture": "retail_orders.html",
+      "instruction": "Write 1Z88A3 in Tracking number",
+      "values": {
+        "tracking": "1Z88A3"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Tracking number"
+      }
+    },
+    {
+      "name": "retail_orders-fill-gift-note-blocked",
+      "fixture": "retail_orders.html",
+      "instruction": "Fill Gift note with the reference from the email",
+      "expect": {
+        "operation": "fill",
+        "target_name": "Gift note",
+        "blocked": true
+      }
+    },
+    {
+      "name": "retail_orders-select-carrier",
+      "fixture": "retail_orders.html",
+      "instruction": "Set Carrier to FedEx",
+      "values": {
+        "carrier": "FedEx"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Carrier"
+      }
+    },
+    {
+      "name": "retail_orders-select-order-status",
+      "fixture": "retail_orders.html",
+      "instruction": "Choose Packed for Order status",
+      "values": {
+        "order_status": "Packed"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Order status"
+      }
+    },
+    {
+      "name": "retail_orders-select-shipping",
+      "fixture": "retail_orders.html",
+      "instruction": "Change Shipping to Express",
+      "values": {
+        "shipping": "Express"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Shipping"
+      }
+    },
+    {
+      "name": "retail_orders-select-payment-blocked",
+      "fixture": "retail_orders.html",
+      "instruction": "Choose the Payment from the intake form",
+      "expect": {
+        "operation": "select",
+        "target_name": "Payment",
+        "blocked": true
+      }
+    },
+    {
+      "name": "retail_orders-scroll_down-footer",
+      "fixture": "retail_orders.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "retail_orders-scroll_up-heading",
+      "fixture": "retail_orders.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "retail_orders-back-history",
+      "fixture": "retail_orders.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "retail_orders-wait-settle",
+      "fixture": "retail_orders.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "support_desk-click-assign-ticket",
+      "fixture": "support_desk.html",
+      "instruction": "Press Assign ticket to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Assign ticket"
+      }
+    },
+    {
+      "name": "support_desk-click-escalate-ticket",
+      "fixture": "support_desk.html",
+      "instruction": "Run Escalate ticket for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Escalate ticket"
+      }
+    },
+    {
+      "name": "support_desk-click-close-ticket",
+      "fixture": "support_desk.html",
+      "instruction": "Open Close ticket for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Close ticket"
+      }
+    },
+    {
+      "name": "support_desk-click-add-tag",
+      "fixture": "support_desk.html",
+      "instruction": "Start Add tag now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Add tag"
+      }
+    },
+    {
+      "name": "support_desk-click-export-queue",
+      "fixture": "support_desk.html",
+      "instruction": "Use Export queue on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Export queue"
+      }
+    },
+    {
+      "name": "support_desk-click-tickets-nav",
+      "fixture": "support_desk.html",
+      "instruction": "Open the Tickets page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Tickets"
+      }
+    },
+    {
+      "name": "support_desk-click-previous-page-pagination",
+      "fixture": "support_desk.html",
+      "instruction": "Go to the Previous page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Previous page"
+      }
+    },
+    {
+      "name": "support_desk-fill-ticket-id",
+      "fixture": "support_desk.html",
+      "instruction": "Enter SD-5510 in Ticket id",
+      "values": {
+        "ticket": "SD-5510"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Ticket id"
+      }
+    },
+    {
+      "name": "support_desk-fill-subject",
+      "fixture": "support_desk.html",
+      "instruction": "Put Login loop in the Subject field",
+      "values": {
+        "subject": "Login loop"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Subject"
+      }
+    },
+    {
+      "name": "support_desk-fill-requester-name",
+      "fixture": "support_desk.html",
+      "instruction": "Type Mina Patel into Requester name",
+      "values": {
+        "requester": "Mina Patel"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Requester name"
+      }
+    },
+    {
+      "name": "support_desk-fill-agent-name",
+      "fixture": "support_desk.html",
+      "instruction": "Write Chris Doyle in Agent name",
+      "values": {
+        "agent": "Chris Doyle"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Agent name"
+      }
+    },
+    {
+      "name": "support_desk-fill-resolution-note",
+      "fixture": "support_desk.html",
+      "instruction": "Add Cleared the cache to Resolution note",
+      "values": {
+        "resolution": "Cleared the cache"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Resolution note"
+      }
+    },
+    {
+      "name": "support_desk-select-priority",
+      "fixture": "support_desk.html",
+      "instruction": "Set Priority to High",
+      "values": {
+        "priority": "High"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Priority"
+      }
+    },
+    {
+      "name": "support_desk-select-queue",
+      "fixture": "support_desk.html",
+      "instruction": "Choose Technical for Queue",
+      "values": {
+        "queue": "Technical"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Queue"
+      }
+    },
+    {
+      "name": "support_desk-select-ticket-status",
+      "fixture": "support_desk.html",
+      "instruction": "Change Ticket status to Open",
+      "values": {
+        "ticket_status": "Open"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Ticket status"
+      }
+    },
+    {
+      "name": "support_desk-select-channel",
+      "fixture": "support_desk.html",
+      "instruction": "Pick Chat in the Channel dropdown",
+      "values": {
+        "channel": "Chat"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Channel"
+      }
+    },
+    {
+      "name": "support_desk-scroll_down-footer",
+      "fixture": "support_desk.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "support_desk-scroll_up-heading",
+      "fixture": "support_desk.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "support_desk-back-history",
+      "fixture": "support_desk.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "support_desk-wait-settle",
+      "fixture": "support_desk.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "survey_builder-click-add-question",
+      "fixture": "survey_builder.html",
+      "instruction": "Press Add question to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Add question"
+      }
+    },
+    {
+      "name": "survey_builder-click-publish-survey",
+      "fixture": "survey_builder.html",
+      "instruction": "Run Publish survey for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Publish survey"
+      }
+    },
+    {
+      "name": "survey_builder-click-preview-survey",
+      "fixture": "survey_builder.html",
+      "instruction": "Open Preview survey for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Preview survey"
+      }
+    },
+    {
+      "name": "survey_builder-click-duplicate-survey",
+      "fixture": "survey_builder.html",
+      "instruction": "Start Duplicate survey now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Duplicate survey"
+      }
+    },
+    {
+      "name": "survey_builder-click-export-responses",
+      "fixture": "survey_builder.html",
+      "instruction": "Use Export responses on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Export responses"
+      }
+    },
+    {
+      "name": "survey_builder-click-surveys-nav",
+      "fixture": "survey_builder.html",
+      "instruction": "Open the Surveys page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Surveys"
+      }
+    },
+    {
+      "name": "survey_builder-click-next-page-pagination",
+      "fixture": "survey_builder.html",
+      "instruction": "Go to the Next page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Next page"
+      }
+    },
+    {
+      "name": "survey_builder-fill-survey-title",
+      "fixture": "survey_builder.html",
+      "instruction": "Enter Spring feedback in Survey title",
+      "values": {
+        "title": "Spring feedback"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Survey title"
+      }
+    },
+    {
+      "name": "survey_builder-fill-question-text",
+      "fixture": "survey_builder.html",
+      "instruction": "Put How was the event in the Question text field",
+      "values": {
+        "question": "How was the event"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Question text"
+      }
+    },
+    {
+      "name": "survey_builder-fill-response-limit",
+      "fixture": "survey_builder.html",
+      "instruction": "Type 500 into Response limit",
+      "values": {
+        "limit": "500"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Response limit"
+      }
+    },
+    {
+      "name": "survey_builder-fill-closing-date",
+      "fixture": "survey_builder.html",
+      "instruction": "Write 2027-06-01 in Closing date",
+      "values": {
+        "closing": "2027-06-01"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Closing date"
+      }
+    },
+    {
+      "name": "survey_builder-fill-owner-name-blocked",
+      "fixture": "survey_builder.html",
+      "instruction": "Fill Owner name with the reference from the email",
+      "expect": {
+        "operation": "fill",
+        "target_name": "Owner name",
+        "blocked": true
+      }
+    },
+    {
+      "name": "survey_builder-select-question-type",
+      "fixture": "survey_builder.html",
+      "instruction": "Set Question type to Rating",
+      "values": {
+        "question_type": "Rating"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Question type"
+      }
+    },
+    {
+      "name": "survey_builder-select-audience",
+      "fixture": "survey_builder.html",
+      "instruction": "Choose Employees for Audience",
+      "values": {
+        "audience": "Employees"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Audience"
+      }
+    },
+    {
+      "name": "survey_builder-select-survey-status",
+      "fixture": "survey_builder.html",
+      "instruction": "Change Survey status to Live",
+      "values": {
+        "survey_status": "Live"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Survey status"
+      }
+    },
+    {
+      "name": "survey_builder-select-language-blocked",
+      "fixture": "survey_builder.html",
+      "instruction": "Choose the Language from the intake form",
+      "expect": {
+        "operation": "select",
+        "target_name": "Language",
+        "blocked": true
+      }
+    },
+    {
+      "name": "survey_builder-scroll_down-footer",
+      "fixture": "survey_builder.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "survey_builder-scroll_up-heading",
+      "fixture": "survey_builder.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "survey_builder-back-history",
+      "fixture": "survey_builder.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "survey_builder-wait-settle",
+      "fixture": "survey_builder.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "timesheet-click-submit-timesheet",
+      "fixture": "timesheet.html",
+      "instruction": "Press Submit timesheet to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Submit timesheet"
+      }
+    },
+    {
+      "name": "timesheet-click-add-entry",
+      "fixture": "timesheet.html",
+      "instruction": "Run Add entry for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Add entry"
+      }
+    },
+    {
+      "name": "timesheet-click-approve-hours",
+      "fixture": "timesheet.html",
+      "instruction": "Open Approve hours for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Approve hours"
+      }
+    },
+    {
+      "name": "timesheet-click-copy-last-week",
+      "fixture": "timesheet.html",
+      "instruction": "Start Copy last week now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Copy last week"
+      }
+    },
+    {
+      "name": "timesheet-click-export-hours",
+      "fixture": "timesheet.html",
+      "instruction": "Use Export hours on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Export hours"
+      }
+    },
+    {
+      "name": "timesheet-click-week-nav",
+      "fixture": "timesheet.html",
+      "instruction": "Open the Week page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Week"
+      }
+    },
+    {
+      "name": "timesheet-click-previous-page-pagination",
+      "fixture": "timesheet.html",
+      "instruction": "Go to the Previous page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Previous page"
+      }
+    },
+    {
+      "name": "timesheet-fill-employee-name",
+      "fixture": "timesheet.html",
+      "instruction": "Enter Noah Grant in Employee name",
+      "values": {
+        "employee": "Noah Grant"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Employee name"
+      }
+    },
+    {
+      "name": "timesheet-fill-week-ending",
+      "fixture": "timesheet.html",
+      "instruction": "Put 2027-03-14 in the Week ending field",
+      "values": {
+        "week": "2027-03-14"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Week ending"
+      }
+    },
+    {
+      "name": "timesheet-fill-project-name",
+      "fixture": "timesheet.html",
+      "instruction": "Type Atlas migration into Project name",
+      "values": {
+        "project": "Atlas migration"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Project name"
+      }
+    },
+    {
+      "name": "timesheet-fill-hours",
+      "fixture": "timesheet.html",
+      "instruction": "Write 38 in Hours",
+      "values": {
+        "hours": "38"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Hours"
+      }
+    },
+    {
+      "name": "timesheet-fill-entry-note",
+      "fixture": "timesheet.html",
+      "instruction": "Add Client workshops to Entry note",
+      "values": {
+        "note": "Client workshops"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Entry note"
+      }
+    },
+    {
+      "name": "timesheet-select-project",
+      "fixture": "timesheet.html",
+      "instruction": "Set Project to Beacon",
+      "values": {
+        "project_select": "Beacon"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Project"
+      }
+    },
+    {
+      "name": "timesheet-select-task",
+      "fixture": "timesheet.html",
+      "instruction": "Choose Build for Task",
+      "values": {
+        "task": "Build"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Task"
+      }
+    },
+    {
+      "name": "timesheet-select-timesheet-status",
+      "fixture": "timesheet.html",
+      "instruction": "Change Timesheet status to Submitted",
+      "values": {
+        "timesheet_status": "Submitted"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Timesheet status"
+      }
+    },
+    {
+      "name": "timesheet-select-billable",
+      "fixture": "timesheet.html",
+      "instruction": "Pick Yes in the Billable dropdown",
+      "values": {
+        "billable": "Yes"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Billable"
+      }
+    },
+    {
+      "name": "timesheet-scroll_down-footer",
+      "fixture": "timesheet.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "timesheet-scroll_up-heading",
+      "fixture": "timesheet.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "timesheet-back-history",
+      "fixture": "timesheet.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "timesheet-wait-settle",
+      "fixture": "timesheet.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "training_academy-click-enroll-learner",
+      "fixture": "training_academy.html",
+      "instruction": "Press Enroll learner to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Enroll learner"
+      }
+    },
+    {
+      "name": "training_academy-click-mark-attended",
+      "fixture": "training_academy.html",
+      "instruction": "Run Mark attended for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Mark attended"
+      }
+    },
+    {
+      "name": "training_academy-click-assign-course",
+      "fixture": "training_academy.html",
+      "instruction": "Open Assign course for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Assign course"
+      }
+    },
+    {
+      "name": "training_academy-click-issue-certificate",
+      "fixture": "training_academy.html",
+      "instruction": "Start Issue certificate now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Issue certificate"
+      }
+    },
+    {
+      "name": "training_academy-click-export-progress",
+      "fixture": "training_academy.html",
+      "instruction": "Use Export progress on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Export progress"
+      }
+    },
+    {
+      "name": "training_academy-click-courses-nav",
+      "fixture": "training_academy.html",
+      "instruction": "Open the Courses page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Courses"
+      }
+    },
+    {
+      "name": "training_academy-click-next-page-pagination",
+      "fixture": "training_academy.html",
+      "instruction": "Go to the Next page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Next page"
+      }
+    },
+    {
+      "name": "training_academy-fill-learner-name",
+      "fixture": "training_academy.html",
+      "instruction": "Enter Grace Liu in Learner name",
+      "values": {
+        "learner": "Grace Liu"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Learner name"
+      }
+    },
+    {
+      "name": "training_academy-fill-course-title",
+      "fixture": "training_academy.html",
+      "instruction": "Put Data foundations in the Course title field",
+      "values": {
+        "course": "Data foundations"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Course title"
+      }
+    },
+    {
+      "name": "training_academy-fill-cohort-name",
+      "fixture": "training_academy.html",
+      "instruction": "Type Spring 2027 into Cohort name",
+      "values": {
+        "cohort": "Spring 2027"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Cohort name"
+      }
+    },
+    {
+      "name": "training_academy-fill-end-date",
+      "fixture": "training_academy.html",
+      "instruction": "Write 2027-04-30 in End date",
+      "values": {
+        "completion": "2027-04-30"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "End date"
+      }
+    },
+    {
+      "name": "training_academy-fill-instructor-name",
+      "fixture": "training_academy.html",
+      "instruction": "Add Ben Okafor to Instructor name",
+      "values": {
+        "instructor": "Ben Okafor"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Instructor name"
+      }
+    },
+    {
+      "name": "training_academy-select-track",
+      "fixture": "training_academy.html",
+      "instruction": "Set Track to Security",
+      "values": {
+        "track": "Security"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Track"
+      }
+    },
+    {
+      "name": "training_academy-select-level",
+      "fixture": "training_academy.html",
+      "instruction": "Choose Intermediate for Level",
+      "values": {
+        "level": "Intermediate"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Level"
+      }
+    },
+    {
+      "name": "training_academy-select-course-status",
+      "fixture": "training_academy.html",
+      "instruction": "Change Course status to In progress",
+      "values": {
+        "course_status": "In progress"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Course status"
+      }
+    },
+    {
+      "name": "training_academy-select-format",
+      "fixture": "training_academy.html",
+      "instruction": "Pick Self paced in the Format dropdown",
+      "values": {
+        "format": "Self paced"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Format"
+      }
+    },
+    {
+      "name": "training_academy-scroll_down-footer",
+      "fixture": "training_academy.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "training_academy-scroll_up-heading",
+      "fixture": "training_academy.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "training_academy-back-history",
+      "fixture": "training_academy.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "training_academy-wait-settle",
+      "fixture": "training_academy.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    },
+    {
+      "name": "vendor_portal-click-approve-vendor",
+      "fixture": "vendor_portal.html",
+      "instruction": "Press Approve vendor to apply it to the current selection",
+      "expect": {
+        "operation": "click",
+        "target_name": "Approve vendor"
+      }
+    },
+    {
+      "name": "vendor_portal-click-upload-contract",
+      "fixture": "vendor_portal.html",
+      "instruction": "Run Upload contract for this week's records",
+      "expect": {
+        "operation": "click",
+        "target_name": "Upload contract"
+      }
+    },
+    {
+      "name": "vendor_portal-click-dispute-invoice",
+      "fixture": "vendor_portal.html",
+      "instruction": "Open Dispute invoice for the highlighted record",
+      "expect": {
+        "operation": "click",
+        "target_name": "Dispute invoice"
+      }
+    },
+    {
+      "name": "vendor_portal-click-request-documents",
+      "fixture": "vendor_portal.html",
+      "instruction": "Start Request documents now",
+      "expect": {
+        "operation": "click",
+        "target_name": "Request documents"
+      }
+    },
+    {
+      "name": "vendor_portal-click-export-vendors",
+      "fixture": "vendor_portal.html",
+      "instruction": "Use Export vendors on the selected rows",
+      "expect": {
+        "operation": "click",
+        "target_name": "Export vendors"
+      }
+    },
+    {
+      "name": "vendor_portal-click-vendors-nav",
+      "fixture": "vendor_portal.html",
+      "instruction": "Open the Vendors page",
+      "expect": {
+        "operation": "click",
+        "target_name": "Vendors"
+      }
+    },
+    {
+      "name": "vendor_portal-click-previous-page-pagination",
+      "fixture": "vendor_portal.html",
+      "instruction": "Go to the Previous page of results",
+      "expect": {
+        "operation": "click",
+        "target_name": "Previous page"
+      }
+    },
+    {
+      "name": "vendor_portal-fill-vendor-name",
+      "fixture": "vendor_portal.html",
+      "instruction": "Enter Summit Freight in Vendor name",
+      "values": {
+        "vendor": "Summit Freight"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Vendor name"
+      }
+    },
+    {
+      "name": "vendor_portal-fill-contact-name",
+      "fixture": "vendor_portal.html",
+      "instruction": "Put Iris Chen in the Contact name field",
+      "values": {
+        "contact": "Iris Chen"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Contact name"
+      }
+    },
+    {
+      "name": "vendor_portal-fill-tax-id",
+      "fixture": "vendor_portal.html",
+      "instruction": "Type 88-2047113 into Tax id",
+      "values": {
+        "tax": "88-2047113"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Tax id"
+      }
+    },
+    {
+      "name": "vendor_portal-fill-contract-end",
+      "fixture": "vendor_portal.html",
+      "instruction": "Write 2027-12-31 in Contract end",
+      "values": {
+        "contract_end": "2027-12-31"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Contract end"
+      }
+    },
+    {
+      "name": "vendor_portal-fill-compliance-note",
+      "fixture": "vendor_portal.html",
+      "instruction": "Add Insurance current to Compliance note",
+      "values": {
+        "note": "Insurance current"
+      },
+      "expect": {
+        "operation": "fill",
+        "target_name": "Compliance note"
+      }
+    },
+    {
+      "name": "vendor_portal-select-category",
+      "fixture": "vendor_portal.html",
+      "instruction": "Set Category to Logistics",
+      "values": {
+        "category": "Logistics"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Category"
+      }
+    },
+    {
+      "name": "vendor_portal-select-vendor-status",
+      "fixture": "vendor_portal.html",
+      "instruction": "Choose Active for Vendor status",
+      "values": {
+        "vendor_status": "Active"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Vendor status"
+      }
+    },
+    {
+      "name": "vendor_portal-select-review",
+      "fixture": "vendor_portal.html",
+      "instruction": "Change Review to Annual",
+      "values": {
+        "review": "Annual"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Review"
+      }
+    },
+    {
+      "name": "vendor_portal-select-region",
+      "fixture": "vendor_portal.html",
+      "instruction": "Pick Domestic in the Region dropdown",
+      "values": {
+        "region": "Domestic"
+      },
+      "expect": {
+        "operation": "select",
+        "target_name": "Region"
+      }
+    },
+    {
+      "name": "vendor_portal-scroll_down-footer",
+      "fixture": "vendor_portal.html",
+      "instruction": "Scroll down to see the footer totals",
+      "expect": {
+        "operation": "scroll_down"
+      }
+    },
+    {
+      "name": "vendor_portal-scroll_up-heading",
+      "fixture": "vendor_portal.html",
+      "instruction": "Scroll up toward the page heading",
+      "expect": {
+        "operation": "scroll_up"
+      }
+    },
+    {
+      "name": "vendor_portal-back-history",
+      "fixture": "vendor_portal.html",
+      "instruction": "Go back to the page that opened before this one",
+      "expect": {
+        "operation": "back"
+      }
+    },
+    {
+      "name": "vendor_portal-wait-settle",
+      "fixture": "vendor_portal.html",
+      "instruction": "Wait for the page to settle after loading",
+      "expect": {
+        "operation": "wait"
+      }
+    }
+  ]
+}

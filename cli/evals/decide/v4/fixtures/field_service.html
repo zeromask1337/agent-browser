@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Field service dispatch</title>
+  </head>
+  <body>
+    <header>
+      <h1>Field service dispatch</h1>
+      <nav>
+      <a href="/jobs">Jobs</a>
+      <a href="/technicians">Technicians</a>
+      <a href="/parts">Parts</a>
+      <a href="/schedule">Schedule</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="field_service-f0">Job number</label>
+        <input id="field_service-f0" type="text" data-key="job" value="FS-20831">
+        <label for="field_service-f1">Customer name</label>
+        <input id="field_service-f1" type="text" data-key="customer" value="Harbor Cafe">
+        <label for="field_service-f2">Site address</label>
+        <input id="field_service-f2" type="text" data-key="address" value="44 Dock Street">
+        <label for="field_service-f3">Contact phone</label>
+        <input id="field_service-f3" type="text" data-key="phone" value="555-0142">
+        <label for="field_service-f4">Work note</label>
+        <input id="field_service-f4" type="text" data-key="note" value="Replace the drive belt">
+        <label for="field_service-s0">Visit window</label>
+        <select id="field_service-s0" data-key="window">
+          <option>Morning</option>
+          <option selected>Afternoon</option>
+          <option>Evening</option>
+        </select>
+        <label for="field_service-s1">Trade</label>
+        <select id="field_service-s1" data-key="trade">
+          <option>Electrical</option>
+          <option>Plumbing</option>
+          <option selected>HVAC</option>
+        </select>
+        <label for="field_service-s2">Urgency</label>
+        <select id="field_service-s2" data-key="urgency">
+          <option>Routine</option>
+          <option selected>Urgent</option>
+        </select>
+        <label for="field_service-s3">Zone</label>
+        <select id="field_service-s3" data-key="zone">
+          <option selected>East</option>
+          <option>West</option>
+          <option>Central</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Dispatch technician</button>
+      <button type="button">Close job</button>
+      <button type="button">Order part</button>
+      <button type="button">Reschedule visit</button>
+      <button type="button">Print work order</button>
+        <p><a href="/">Back to Jobs</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Previous page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

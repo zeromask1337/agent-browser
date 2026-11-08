@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Insurance quote workbench</title>
+  </head>
+  <body>
+    <header>
+      <h1>Insurance quote workbench</h1>
+      <nav>
+      <a href="/quotes">Quotes</a>
+      <a href="/policies">Policies</a>
+      <a href="/claims">Claims</a>
+      <a href="/customers">Customers</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="insurance_quote-f0">Quote id</label>
+        <input id="insurance_quote-f0" type="text" data-key="quote" value="Q-55219">
+        <label for="insurance_quote-f1">Customer name</label>
+        <input id="insurance_quote-f1" type="text" data-key="customer" value="Owen Park">
+        <label for="insurance_quote-f2">Vehicle year</label>
+        <input id="insurance_quote-f2" type="text" data-key="year" value="2022">
+        <label for="insurance_quote-f3">Coverage amount</label>
+        <input id="insurance_quote-f3" type="text" data-key="coverage" value="250000">
+        <label for="insurance_quote-f4">Agent note</label>
+        <input id="insurance_quote-f4" type="text" data-key="note" value="Multi policy discount">
+        <label for="insurance_quote-s0">Product</label>
+        <select id="insurance_quote-s0" data-key="product">
+          <option selected>Auto</option>
+          <option>Home</option>
+          <option>Life</option>
+        </select>
+        <label for="insurance_quote-s1">Term</label>
+        <select id="insurance_quote-s1" data-key="term">
+          <option>Six months</option>
+          <option selected>One year</option>
+        </select>
+        <label for="insurance_quote-s2">Deductible</label>
+        <select id="insurance_quote-s2" data-key="deductible">
+          <option>500</option>
+          <option selected>1000</option>
+          <option>2000</option>
+        </select>
+        <label for="insurance_quote-s3">Payment</label>
+        <select id="insurance_quote-s3" data-key="payment">
+          <option selected>Monthly</option>
+          <option>Annual</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Generate quote</button>
+      <button type="button">Bind policy</button>
+      <button type="button">Add driver</button>
+      <button type="button">Compare plans</button>
+      <button type="button">Email quote</button>
+        <p><a href="/">Back to Quotes</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Next page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

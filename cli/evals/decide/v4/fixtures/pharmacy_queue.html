@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pharmacy queue</title>
+  </head>
+  <body>
+    <header>
+      <h1>Pharmacy queue</h1>
+      <nav>
+      <a href="/queue">Queue</a>
+      <a href="/patients">Patients</a>
+      <a href="/inventory">Inventory</a>
+      <a href="/labels">Labels</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="pharmacy_queue-f0">Prescription number</label>
+        <input id="pharmacy_queue-f0" type="text" data-key="prescription" value="RX-70218">
+        <label for="pharmacy_queue-f1">Patient name</label>
+        <input id="pharmacy_queue-f1" type="text" data-key="patient" value="Hana Kim">
+        <label for="pharmacy_queue-f2">Drug name</label>
+        <input id="pharmacy_queue-f2" type="text" data-key="drug" value="Metformin">
+        <label for="pharmacy_queue-f3">Dose</label>
+        <input id="pharmacy_queue-f3" type="text" data-key="dose" value="500 mg">
+        <label for="pharmacy_queue-f4">Pharmacist note</label>
+        <input id="pharmacy_queue-f4" type="text" data-key="note" value="Check refills">
+        <label for="pharmacy_queue-s0">Priority</label>
+        <select id="pharmacy_queue-s0" data-key="priority">
+          <option>Normal</option>
+          <option selected>Urgent</option>
+        </select>
+        <label for="pharmacy_queue-s1">Order status</label>
+        <select id="pharmacy_queue-s1" data-key="order_status">
+          <option>Queued</option>
+          <option selected>Filling</option>
+          <option>Ready</option>
+        </select>
+        <label for="pharmacy_queue-s2">Pickup</label>
+        <select id="pharmacy_queue-s2" data-key="pickup">
+          <option>Counter</option>
+          <option selected>Drive through</option>
+          <option>Delivery</option>
+        </select>
+        <label for="pharmacy_queue-s3">Insurance</label>
+        <select id="pharmacy_queue-s3" data-key="insurance">
+          <option selected>Primary</option>
+          <option>Secondary</option>
+          <option>Cash</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Fill prescription</button>
+      <button type="button">Verify order</button>
+      <button type="button">Call patient</button>
+      <button type="button">Reprint label</button>
+      <button type="button">Flag interaction</button>
+        <p><a href="/">Back to Queue</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Previous page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

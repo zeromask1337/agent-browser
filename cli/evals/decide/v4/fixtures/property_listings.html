@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Property listings</title>
+  </head>
+  <body>
+    <header>
+      <h1>Property listings</h1>
+      <nav>
+      <a href="/listings">Listings</a>
+      <a href="/agents">Agents</a>
+      <a href="/tours">Tours</a>
+      <a href="/offers">Offers</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="property_listings-f0">Listing id</label>
+        <input id="property_listings-f0" type="text" data-key="listing" value="PL-6620">
+        <label for="property_listings-f1">Address</label>
+        <input id="property_listings-f1" type="text" data-key="address" value="18 Cedar Lane">
+        <label for="property_listings-f2">Asking price</label>
+        <input id="property_listings-f2" type="text" data-key="price" value="425000">
+        <label for="property_listings-f3">Agent name</label>
+        <input id="property_listings-f3" type="text" data-key="agent" value="Marco Silva">
+        <label for="property_listings-f4">Feature note</label>
+        <input id="property_listings-f4" type="text" data-key="note" value="Renovated kitchen">
+        <label for="property_listings-s0">Property type</label>
+        <select id="property_listings-s0" data-key="property_type">
+          <option>House</option>
+          <option>Condo</option>
+          <option selected>Townhouse</option>
+        </select>
+        <label for="property_listings-s1">Bedrooms</label>
+        <select id="property_listings-s1" data-key="bedrooms">
+          <option>Two</option>
+          <option selected>Three</option>
+          <option>Four</option>
+        </select>
+        <label for="property_listings-s2">Listing status</label>
+        <select id="property_listings-s2" data-key="listing_status">
+          <option>Active</option>
+          <option selected>Pending</option>
+          <option>Sold</option>
+        </select>
+        <label for="property_listings-s3">Neighborhood</label>
+        <select id="property_listings-s3" data-key="neighborhood">
+          <option>Hillcrest</option>
+          <option selected>Lakeview</option>
+          <option>Old Town</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Schedule tour</button>
+      <button type="button">Submit offer</button>
+      <button type="button">Share listing</button>
+      <button type="button">Mark sold</button>
+      <button type="button">Download flyer</button>
+        <p><a href="/">Back to Listings</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Previous page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

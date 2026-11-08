@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Training academy</title>
+  </head>
+  <body>
+    <header>
+      <h1>Training academy</h1>
+      <nav>
+      <a href="/courses">Courses</a>
+      <a href="/learners">Learners</a>
+      <a href="/assignments">Assignments</a>
+      <a href="/certificates">Certificates</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="training_academy-f0">Learner name</label>
+        <input id="training_academy-f0" type="text" data-key="learner" value="Grace Liu">
+        <label for="training_academy-f1">Course title</label>
+        <input id="training_academy-f1" type="text" data-key="course" value="Data foundations">
+        <label for="training_academy-f2">Cohort name</label>
+        <input id="training_academy-f2" type="text" data-key="cohort" value="Spring 2027">
+        <label for="training_academy-f3">End date</label>
+        <input id="training_academy-f3" type="text" data-key="completion" value="2027-04-30">
+        <label for="training_academy-f4">Instructor name</label>
+        <input id="training_academy-f4" type="text" data-key="instructor" value="Ben Okafor">
+        <label for="training_academy-s0">Track</label>
+        <select id="training_academy-s0" data-key="track">
+          <option>Data</option>
+          <option selected>Security</option>
+          <option>Leadership</option>
+        </select>
+        <label for="training_academy-s1">Level</label>
+        <select id="training_academy-s1" data-key="level">
+          <option>Intro</option>
+          <option selected>Intermediate</option>
+          <option>Advanced</option>
+        </select>
+        <label for="training_academy-s2">Course status</label>
+        <select id="training_academy-s2" data-key="course_status">
+          <option>Not started</option>
+          <option selected>In progress</option>
+          <option>Complete</option>
+        </select>
+        <label for="training_academy-s3">Format</label>
+        <select id="training_academy-s3" data-key="format">
+          <option>Live</option>
+          <option selected>Self paced</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Enroll learner</button>
+      <button type="button">Mark attended</button>
+      <button type="button">Assign course</button>
+      <button type="button">Issue certificate</button>
+      <button type="button">Export progress</button>
+        <p><a href="/">Back to Courses</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Next page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>
