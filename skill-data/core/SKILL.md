@@ -53,6 +53,7 @@ agent-browser skills get core --ref references/authentication.md --ref templates
 | Load | When you need |
 | --- | --- |
 | `references/commands.md` | Any command or flag not shown here, global options, environment variables, `agent-browser.json` keys, the MCP server and its tool profiles, eve integration, network mocking and HAR, accessibility audits, React and Web Vitals, the dashboard, WebMCP commands, `doctor` |
+| `references/act.md` | `act`: letting a decider choose one operation and target, values, confidence gates, stale results, and decider environment variables |
 | `references/snapshot-refs.md` | How refs are assigned, kept, and invalidated |
 | `references/authentication.md` | Auth vault, `--no-navigate`, credential provider plugins, importing a logged-in browser |
 | `references/session-management.md` | Persistence, `--restore` policies, idle shutdown, tab pinning, parallel sessions |

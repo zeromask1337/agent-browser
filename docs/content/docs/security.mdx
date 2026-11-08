@@ -230,6 +230,29 @@ Config file:
 > --allowed-domains "myapp.com,*.myapp.com,cdn.jsdelivr.net,fonts.googleapis.com,fonts.gstatic.com"
 > ```
 
+## Decider egress
+
+`act` sends page data to the decider you select. This traffic is separate from page traffic, so `--allowed-domains` does not block it.
+
+With `AGENT_BROWSER_DECIDER=jev`, these values reach TypeSafe at `TYPESAFE_BASE_URL`, which defaults to `https://api.typesafe.ai`:
+
+<table>
+  <thead>
+    <tr><th>Data</th><th>Sent</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>The instruction and caller-supplied value key names</td><td>Yes</td></tr>
+    <tr><td>Page URL and title</td><td>Yes</td></tr>
+    <tr><td>Visible candidate role, accessible name, and nth index</td><td>Yes</td></tr>
+    <tr><td>Input values, passwords, cookies, storage, auth vault entries</td><td>Never</td></tr>
+    <tr><td>Screenshots, network bodies, console output</td><td>Never</td></tr>
+  </tbody>
+</table>
+
+A base URL override, such as a gateway, sends the same data to the party that operates it. TypeSafe says it does not train on customer requests or responses. Zero data retention is an enterprise arrangement.
+
+With `AGENT_BROWSER_DECIDER=llm`, the same state goes to the AI Gateway configured by `AI_GATEWAY_URL`.
+
 ## Action Policy
 
 Gate actions using a static policy file. The policy is enforced by the daemon -- denied actions fail immediately.
