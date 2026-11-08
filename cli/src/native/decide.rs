@@ -137,11 +137,11 @@ fn operation_criteria() -> Value {
     );
     criteria.insert(
         "scroll_down".to_string(),
-        json!("Scroll the page down to reveal more content."),
+        json!("Scroll the page down to reveal more content. Choose scroll_down when the instruction asks to scroll down, even when the page also shows a link with a matching name."),
     );
     criteria.insert(
         "scroll_up".to_string(),
-        json!("Scroll the page up to reveal earlier content."),
+        json!("Scroll the page up to reveal earlier content. Choose scroll_up when the instruction asks to scroll up or back toward the top, even when the page also shows a Back to top link."),
     );
     criteria.insert(
         "back".to_string(),
@@ -461,7 +461,7 @@ impl DecisionRequest {
             "operation".to_string(),
             json!({
                 "type": "choice",
-                "instructions": "Which single operation should be performed next to satisfy the instruction? Choose click, fill, or select only when the instruction acts on an offered element. Choose fill or select only when value_keys lists a value. Choose wait when the instruction asks to wait or the page is still loading. Choose done only when the page already shows the result and the instruction does not ask to wait, go back, or change the page.",
+                "instructions": "Which single operation should be performed next to satisfy the instruction? Choose click, fill, or select only when the instruction acts on an offered element. Choose fill or select only when value_keys lists a value. Choose scroll_down or scroll_up when the instruction asks to scroll, even if a link with a matching name is offered. Choose wait when the instruction asks to wait or the page is still loading. Choose done only when the page already shows the result and the instruction does not ask to wait, go back, scroll, or change the page.",
                 "criteria": operation_criteria(),
             }),
         );
@@ -1496,6 +1496,9 @@ mod tests {
         assert!(text("done").contains("do not choose done when the instruction asks to wait"));
         assert!(text("back").contains("browser history"));
         assert!(text("back").contains("previous page"));
+        assert!(text("scroll_down").contains("instruction asks to scroll down"));
+        assert!(text("scroll_up").contains("instruction asks to scroll up"));
+        assert!(text("scroll_up").contains("back to top"));
         assert!(text("fill").contains("value_keys"));
         assert!(text("select").contains("value_keys"));
         let instructions = request.questions["operation"]["instructions"]
@@ -1503,6 +1506,7 @@ mod tests {
             .unwrap_or_default()
             .to_lowercase();
         assert!(instructions.contains("value_keys"));
+        assert!(instructions.contains("scroll_down or scroll_up"));
         assert!(instructions.contains("wait"));
     }
 
