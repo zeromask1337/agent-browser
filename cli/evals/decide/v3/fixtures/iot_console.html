@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Grid IoT console</title>
+  </head>
+  <body>
+    <nav>
+      <a href="/devices">Devices</a>
+      <a href="/alerts">Alerts</a>
+      <a href="/firmware">Firmware</a>
+    </nav>
+    <h1>Sensor fleet</h1>
+    <label for="q57">Device search</label>
+    <input id="q57" type="search">
+    <button>Search devices</button>
+    <label for="q58">Site</label>
+    <select id="q58">
+          <option>All sites</option>
+          <option>Harbor</option>
+          <option>Ridge</option>
+          <option>Depot</option>
+        </select>
+    <label for="q59">Status</label>
+    <select id="q59">
+          <option>Any status</option>
+          <option>Online</option>
+          <option>Offline</option>
+          <option>Warning</option>
+        </select>
+    <label for="q60">Sort by</label>
+    <select id="q60">
+          <option>Name</option>
+          <option>Last seen</option>
+          <option>Battery</option>
+        </select>
+    <input id="q61" type="checkbox">
+    <label for="q61">Low battery only</label>
+    <button>Restart device</button>
+    <button>Update firmware</button>
+    <a href="/logs">Device logs</a>
+    <a href="/map">Network map</a>
+    <div style="height: 1900px"> </div>
+    <button>Export inventory</button>
+  </body>
+</html>

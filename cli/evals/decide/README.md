@@ -23,6 +23,8 @@ Fixtures resolve from `fixtures/` beside the cases file first, then from `src/na
 
 `cases-heldout.json` is a separate held-out set. It was written and labeled before any live run and was not used to tune prompts, criteria, or labels.
 
+`v3/` is the frozen fresh set used for the latest run. Its generator, fixtures, cases, and labels were committed before the run, and `v3/RESULTS.md` records the single run.
+
 The runner launches one headless Chrome, loads each fixture as a data URL, snapshots it, builds the same candidate list `act` uses, and asks the decider once per case. It prints a per-case table and these numbers:
 
 - Top-1 accuracy: operation and target both correct.

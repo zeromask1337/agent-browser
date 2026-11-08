@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cedar clinic intake</title>
+  </head>
+  <body>
+    <nav>
+      <a href="/appointments">Appointments</a>
+      <a href="/records">Records</a>
+      <a href="/billing">Billing</a>
+    </nav>
+    <h1>Patient intake</h1>
+    <form>
+      <label for="q7">Legal name</label>
+      <input id="q7" type="text">
+      <label for="q8">Date of birth</label>
+      <input id="q8" type="text">
+      <label for="q9">Mobile number</label>
+      <input id="q9" type="text">
+      <label for="q10">Insurance plan</label>
+      <select id="q10">
+          <option>Self pay</option>
+          <option>Cedar Basic</option>
+          <option>Cedar Plus</option>
+        </select>
+      <label for="q11">Visit reason</label>
+      <select id="q11">
+          <option>Checkup</option>
+          <option>Follow-up</option>
+          <option>Urgent</option>
+        </select>
+      <label for="q12">Preferred location</label>
+      <select id="q12">
+          <option>Downtown</option>
+          <option>Westside</option>
+        </select>
+      <input id="q13" type="checkbox">
+      <label for="q13">New patient</label>
+      <label for="q14">Symptoms</label>
+      <textarea id="q14" rows="3"></textarea>
+      <button>Check in</button>
+      <button>Save draft</button>
+    </form>
+    <a href="/prepare">Prepare for your visit</a>
+    <a href="/rights">Patient rights</a>
+    <div style="height: 2100px"> </div>
+    <button>Request interpreter</button>
+  </body>
+</html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dock warehouse operations</title>
+  </head>
+  <body>
+    <nav>
+      <a href="/inbound">Inbound</a>
+      <a href="/outbound">Outbound</a>
+      <a href="/inventory">Inventory</a>
+    </nav>
+    <h1>Dock schedule</h1>
+    <label for="q80">Search orders</label>
+    <input id="q80" type="search">
+    <button>Find orders</button>
+    <label for="q81">Dock</label>
+    <select id="q81">
+          <option>Dock 1</option>
+          <option>Dock 2</option>
+          <option>Dock 3</option>
+        </select>
+    <label for="q82">Carrier</label>
+    <select id="q82">
+          <option>Any carrier</option>
+          <option>Blue Line</option>
+          <option>North Rail</option>
+        </select>
+    <label for="q83">Shift</label>
+    <select id="q83">
+          <option>Morning</option>
+          <option>Afternoon</option>
+          <option>Night</option>
+        </select>
+    <input id="q84" type="checkbox">
+    <label for="q84">Late arrivals only</label>
+    <button>Assign dock</button>
+    <button>Print labels</button>
+    <a href="/map">Dock map</a>
+    <a href="/safety">Safety checklist</a>
+    <div style="height: 2100px"> </div>
+    <button>Close shift</button>
+  </body>
+</html>
