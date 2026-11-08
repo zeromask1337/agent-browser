@@ -138,7 +138,7 @@ agent-browser find nth 2 ".card" hover
 
 ## Decide and run one step
 
-`act` asks a decider to choose one operation and one visible target from the current snapshot, then runs that action. Run `snapshot` first so refs exist, and snapshot again after the page changes.
+`act` asks a decider to choose one operation and one rendered target from the current snapshot, then runs that action. Run `snapshot` first so refs exist, and snapshot again after the page changes. Elements outside the viewport are included because an action scrolls the chosen ref into view before it runs.
 
 ```bash
 agent-browser act "<instruction>" [--dry-run] [--min-confidence <0..1>] [--value <key>=<value>]...

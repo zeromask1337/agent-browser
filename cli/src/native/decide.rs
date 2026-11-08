@@ -28,7 +28,9 @@ use sha2::{Digest, Sha256};
 
 use super::cdp::client::CdpClient;
 
-/// Roles offered to a decider. Only actionable, visible elements are offered.
+/// Roles offered to a decider. Only rendered, actionable elements are offered.
+/// Offscreen elements are included because an action scrolls the chosen ref into
+/// view before it runs.
 pub const CANDIDATE_ROLES: &[&str] = &[
     "link",
     "button",
@@ -212,20 +214,21 @@ pub struct CandidateSet {
     pub truncated: bool,
 }
 
-/// Keep visible, actionable refs in DOM order and cap the list.
+/// Keep rendered, actionable refs in DOM order and cap the list.
 ///
-/// `visible` maps a candidate key to its rectangle when the element passed the
-/// visibility probe. A key that is absent is not visible.
+/// `rendered` maps a candidate key to its rectangle when the element passed the
+/// rendering probe. A key that is absent is not rendered. Offscreen elements
+/// are included; an interaction scrolls the chosen ref into view before it runs.
 pub fn assemble_candidates(
     inputs: &[CandidateInput],
-    visible: &HashMap<String, Rect>,
+    rendered: &HashMap<String, Rect>,
     cap: usize,
 ) -> CandidateSet {
     let actionable: Vec<&CandidateInput> = inputs
         .iter()
         .filter(|input| CANDIDATE_ROLES.contains(&input.role.as_str()))
         .filter(|input| input.frame_id.is_none())
-        .filter(|input| visible.contains_key(&input.key))
+        .filter(|input| rendered.contains_key(&input.key))
         .collect();
 
     let truncated = actionable.len() > cap;
@@ -277,9 +280,14 @@ pub fn fingerprint(url: &str, candidates: &[Candidate], visible: &HashMap<String
 /// Read every element's viewport rectangle in one page evaluation, then map the
 /// tagged elements back to backend node ids in one DOM call.
 ///
+/// Elements are included when they are rendered, not only when they intersect
+/// the current viewport. Ref interactions scroll the element into view before
+/// they run, so an offscreen ref is still actionable, and long pages commonly
+/// put the requested target below the fold.
+///
 /// The page is tagged with `data-ab-cand` the same way the snapshot tags
 /// cursor-interactive elements. No CDP call is made per candidate.
-pub async fn probe_visible_rects(
+pub async fn probe_rendered_rects(
     client: &CdpClient,
     session_id: &str,
 ) -> Result<HashMap<i64, Rect>, String> {
@@ -292,11 +300,10 @@ pub async fn probe_visible_rects(
         try { el.setAttribute('data-ab-cand', String(i)); } catch (e) { continue; }
         var r = el.getBoundingClientRect();
         var cs = getComputedStyle(el);
-        var visible = r.width > 0 && r.height > 0 &&
+        var rendered = r.width > 0 && r.height > 0 &&
             cs.display !== 'none' && cs.visibility !== 'hidden' &&
-            r.bottom > 0 && r.right > 0 &&
-            r.top < (window.innerHeight || 0) && r.left < (window.innerWidth || 0);
-        out.push({ x: r.x, y: r.y, w: r.width, h: r.height, v: visible });
+            cs.visibility !== 'collapse';
+        out.push({ x: r.x, y: r.y, w: r.width, h: r.height, rendered: rendered });
     }
     return out;
 })()
@@ -360,8 +367,11 @@ fn collect_tagged_rects(node: &Value, rects: &[Value], out: &mut HashMap<i64, Re
             (index, node.get("backendNodeId").and_then(|v| v.as_i64()))
         {
             if let Some(rect) = rects.get(index) {
-                let visible = rect.get("v").and_then(|v| v.as_bool()).unwrap_or(false);
-                if visible {
+                let rendered = rect
+                    .get("rendered")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+                if rendered {
                     out.insert(
                         backend,
                         Rect {
@@ -1332,12 +1342,12 @@ mod tests {
     }
 
     #[test]
-    fn candidates_keep_dom_order_and_filter_roles_and_visibility() {
+    fn candidates_keep_dom_order_and_filter_roles_and_rendering() {
         let inputs = vec![
             candidate("e1", "button", "One", None),
             candidate("e2", "heading", "Not actionable", None),
             candidate("e3", "link", "Three", None),
-            candidate("e4", "textbox", "Not visible", None),
+            candidate("e4", "textbox", "Not rendered", None),
         ];
         let visible = rects(&["e1", "e3"]);
         let set = assemble_candidates(&inputs, &visible, MAX_CANDIDATES);
@@ -1349,6 +1359,42 @@ mod tests {
             vec!["e1", "e3"]
         );
         assert!(!set.truncated);
+    }
+
+    #[test]
+    fn candidates_include_offscreen_rendered_elements() {
+        let inputs = vec![
+            candidate("e1", "link", "Read the reviews", None),
+            candidate("e2", "link", "Back to top", None),
+        ];
+        let rendered = HashMap::from([
+            (
+                "e1".to_string(),
+                Rect {
+                    x: 10.0,
+                    y: 2400.0,
+                    width: 120.0,
+                    height: 24.0,
+                },
+            ),
+            (
+                "e2".to_string(),
+                Rect {
+                    x: 10.0,
+                    y: 4800.0,
+                    width: 90.0,
+                    height: 24.0,
+                },
+            ),
+        ]);
+        let set = assemble_candidates(&inputs, &rendered, MAX_CANDIDATES);
+        assert_eq!(
+            set.candidates
+                .iter()
+                .map(|candidate| candidate.key.as_str())
+                .collect::<Vec<_>>(),
+            vec!["e1", "e2"]
+        );
     }
 
     #[test]

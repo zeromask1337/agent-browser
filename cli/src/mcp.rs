@@ -1239,7 +1239,7 @@ fn parity_tools() -> Vec<Value> {
         tool(
             TOOL_ACT,
             "Act",
-            "Ask a decider to pick one operation and one visible target from the current snapshot, then run it. Requires a snapshot first. The decider never sees input values, cookies, storage, or auth vault entries.",
+            "Ask a decider to pick one operation and one rendered target from the current snapshot, then run it. Requires a snapshot first. Elements outside the viewport are included because an action scrolls the chosen ref into view. The decider never sees input values, cookies, storage, or auth vault entries.",
             json!({
                 "instruction": { "type": "string", "description": "One step, such as 'Click Sign in'." },
                 "dryRun": { "type": "boolean", "default": false, "description": "Return the proposal without running it." },

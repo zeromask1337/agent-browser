@@ -1,6 +1,6 @@
 # act
 
-`act` asks a decider to choose one operation and one visible target from the current snapshot, then runs that action. Use it when the next step is clear in words but the ref is not, or when several similar elements make a deterministic locator ambiguous.
+`act` asks a decider to choose one operation and one rendered target from the current snapshot, then runs that action. Use it when the next step is clear in words but the ref is not, or when several similar elements make a deterministic locator ambiguous.
 
 ```bash
 agent-browser snapshot -i
@@ -43,7 +43,7 @@ The result also includes `operation`, `target`, `valueKey`, `confidence`, `proba
 
 ## Candidates
 
-Only visible, actionable elements are offered: link, button, textbox, searchbox, combobox, checkbox, radio, option, menuitem, and tab. The list keeps DOM order and stops at 80 elements. `candidatesTruncated` reports when the cap dropped any. To narrow the list, snapshot a region with `snapshot -s <selector>` or scroll first.
+Only rendered, actionable elements are offered: link, button, textbox, searchbox, combobox, checkbox, radio, option, menuitem, and tab. Elements outside the viewport are included because an action scrolls the chosen ref into view before it runs. The list keeps DOM order and stops at 80 elements. `candidatesTruncated` reports when the cap dropped any. To narrow the list, snapshot a region with `snapshot -s <selector>` or scroll first.
 
 Unusual answers are contained. A choice outside the offered options, a probability set that does not cover the offered options, or a choice that is not the most likely option fails validation. `act` retries once, and a second invalid answer is an error; nothing runs.
 

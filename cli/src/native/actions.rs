@@ -7523,22 +7523,22 @@ pub(crate) async fn capture_act_page(state: &DaemonState) -> Result<ActPage, Str
     let session_id = mgr.active_session_id()?.to_string();
     let url = mgr.get_url().await.unwrap_or_default();
     let title = mgr.get_title().await.unwrap_or_default();
-    let by_backend = super::decide::probe_visible_rects(&mgr.client, &session_id).await?;
+    let by_backend = super::decide::probe_rendered_rects(&mgr.client, &session_id).await?;
 
     let inputs = super::decide::candidate_inputs(&state.ref_map);
-    let mut visible = std::collections::HashMap::new();
+    let mut rendered = std::collections::HashMap::new();
     let mut rect_by_key = std::collections::HashMap::new();
     for input in &inputs {
         if let Some(rect) = input
             .backend_node_id
             .and_then(|backend| by_backend.get(&backend).copied())
         {
-            visible.insert(input.key.clone(), rect);
+            rendered.insert(input.key.clone(), rect);
             rect_by_key.insert(input.key.clone(), rect);
         }
     }
 
-    let set = super::decide::assemble_candidates(&inputs, &visible, super::decide::MAX_CANDIDATES);
+    let set = super::decide::assemble_candidates(&inputs, &rendered, super::decide::MAX_CANDIDATES);
     let fingerprint = super::decide::fingerprint(&url, &set.candidates, &rect_by_key);
 
     Ok(ActPage {

@@ -2240,10 +2240,11 @@ agent-browser act - Choose and run one action from an instruction
 
 Usage: agent-browser act "<instruction>" [--dry-run] [--min-confidence <0..1>] [--value <key>=<value>]...
 
-Asks a decider to pick one operation and one visible target from the current
+Asks a decider to pick one operation and one rendered target from the current
 snapshot, then runs it. Run snapshot first so refs exist, and snapshot again
-after the page changes. The operation set is click, fill, select, scroll_down,
-scroll_up, back, wait, and done.
+after the page changes. Elements outside the viewport are included because an
+action scrolls the chosen ref into view before it runs. The operation set is
+click, fill, select, scroll_down, scroll_up, back, wait, and done.
 
 The decider only sees the instruction, the page URL and title, candidate role
 and accessible name, and caller-supplied value key names. It never sees input
