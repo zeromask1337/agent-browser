@@ -48,7 +48,9 @@ pub const CANDIDATE_ROLES: &[&str] = &[
 /// truncation so a caller can snapshot a narrower region.
 pub const MAX_CANDIDATES: usize = 80;
 
-/// Closed operation set for the first slice.
+/// Closed operation set for the first slice. `act` is one caller-owned step, so
+/// it has no `done` option: "nothing to do" is a caller judgment, and a page
+/// that already shows the result is reported as blocked when no step is offered.
 pub const OPERATIONS: &[&str] = &[
     "click",
     "fill",
@@ -57,7 +59,6 @@ pub const OPERATIONS: &[&str] = &[
     "scroll_up",
     "back",
     "wait",
-    "done",
 ];
 
 pub const DEFAULT_TYPESAFE_BASE_URL: &str = "https://api.typesafe.ai";
@@ -79,7 +80,6 @@ pub enum Operation {
     ScrollUp,
     Back,
     Wait,
-    Done,
 }
 
 impl Operation {
@@ -92,7 +92,6 @@ impl Operation {
             Operation::ScrollUp => "scroll_up",
             Operation::Back => "back",
             Operation::Wait => "wait",
-            Operation::Done => "done",
         }
     }
 
@@ -108,7 +107,6 @@ impl Operation {
                 "scroll_up" => Operation::ScrollUp,
                 "back" => Operation::Back,
                 "wait" => Operation::Wait,
-                "done" => Operation::Done,
                 _ => unreachable!("OPERATIONS only contains known operations"),
             })
     }
@@ -132,11 +130,11 @@ fn operation_criteria(include_wait: bool) -> Value {
     );
     criteria.insert(
         "fill".to_string(),
-        json!("Enter one caller-supplied value into the target text field: a textbox, searchbox, or editable combobox. Choose fill only when value_keys names a value to enter. A fill with no supplied value is blocked and is never turned into a click."),
+        json!("Enter one caller-supplied value into the target text field: a textbox, searchbox, or editable combobox. Choose fill for an instruction that enters or types text, even when value_keys is empty or does not match the field; a fill with no supplied value is blocked and is never turned into a click."),
     );
     criteria.insert(
         "select".to_string(),
-        json!("Choose one caller-supplied value in the target dropdown, which is a combobox or listbox. Choose select only when value_keys names a value to choose."),
+        json!("Choose one caller-supplied value in the target dropdown, which is a combobox or listbox. Choose select for an instruction that picks, chooses, switches, or sets a dropdown value, even when value_keys is empty or does not match the dropdown; a select with no supplied value is blocked and is never turned into a click."),
     );
     criteria.insert(
         "scroll_down".to_string(),
@@ -156,10 +154,6 @@ fn operation_criteria(include_wait: bool) -> Value {
             json!("Wait for the page to finish loading or settle, then look again. Choose wait whenever the instruction asks to wait, settle, load, or wait for a condition to appear. Wait is not offered when the instruction names an offered element to act on."),
         );
     }
-    criteria.insert(
-        "done".to_string(),
-        json!("The result the instruction asks for is already visible on the page, so no action is needed. Do not choose done when the instruction asks to wait, to go back, or to change the page."),
-    );
     Value::Object(criteria)
 }
 
@@ -208,6 +202,54 @@ fn wait_is_offered(input: &DecisionInput) -> bool {
             .any(|candidate| instruction_names_candidate(&input.instruction, &candidate.name))
 }
 
+/// Phrase shapes that describe a move to an earlier page rather than a click on
+/// a visible control. They are page-transition semantics, not fixture names.
+const HISTORY_BACK_CUES: &[&[&str]] = &[
+    &["previous", "page"],
+    &["previous", "screen"],
+    &["page", "before"],
+    &["screen", "before"],
+    &["step", "before"],
+    &["before", "this"],
+    &["came", "from"],
+    &["opened", "before"],
+    &["from", "before"],
+    &["where", "i", "was"],
+    &["page", "under"],
+    &["under", "this"],
+];
+
+/// Words that explicitly name a visible control to act on. Such an instruction
+/// is a click, so it must not be treated as a history request.
+fn instruction_explicitly_names_a_control(instruction: &str) -> bool {
+    normalized_words(instruction)
+        .iter()
+        .any(|word| matches!(word.as_str(), "click" | "press" | "tap"))
+}
+
+fn contains_word_sequence(words: &[String], sequence: &[&str]) -> bool {
+    sequence.len() <= words.len()
+        && words
+            .windows(sequence.len())
+            .any(|window| window.iter().zip(sequence).all(|(word, cue)| word == cue))
+}
+
+/// Whether the instruction asks to return to an earlier page in browser
+/// history, as opposed to clicking a visible back, return, or previous link.
+///
+/// This gates the operation set, not the label of any fixture: when a history
+/// transition is requested and no control is named, target-taking operations
+/// are not offered, so a nearby "Return to ..." link cannot win.
+fn instruction_requests_history_back(instruction: &str) -> bool {
+    if instruction_explicitly_names_a_control(instruction) {
+        return false;
+    }
+    let words = normalized_words(instruction);
+    HISTORY_BACK_CUES
+        .iter()
+        .any(|cue| contains_word_sequence(&words, cue))
+}
+
 /// One offered element.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Candidate {
@@ -254,15 +296,48 @@ impl Candidate {
         } else {
             self.name.clone()
         };
-        match self.nth {
+        let description = match self.nth {
             Some(nth) => format!("role {} named {:?}, occurrence {}", self.role, name, nth),
             None => format!("role {} named {:?}", self.role, name),
+        };
+        if self.is_back_like_control() {
+            format!(
+                "{} (in-page control; click it only when the instruction names it, otherwise a previous-page request is history back)",
+                description
+            )
+        } else {
+            description
         }
     }
 
     /// Whether this element can carry out the operation.
     pub fn supports(&self, operation: Operation) -> bool {
         operation_supports_role(operation, &self.role, self.activates)
+    }
+
+    /// Operations that could run on this element, for the state sent to a
+    /// decider. This lets the decider see that a pairing is impossible before it
+    /// answers instead of learning it from a blocked result.
+    pub fn supported_operations(&self) -> Vec<&'static str> {
+        [Operation::Click, Operation::Fill, Operation::Select]
+            .into_iter()
+            .filter(|operation| self.supports(*operation))
+            .map(Operation::as_str)
+            .collect()
+    }
+
+    /// Whether the accessible name reads like an in-page navigation control
+    /// such as Back, Return, or Previous. Such a control is still a click
+    /// target; it is not browser history.
+    pub fn is_back_like_control(&self) -> bool {
+        let words = normalized_words(&self.name);
+        let Some(first) = words.first() else {
+            return false;
+        };
+        matches!(first.as_str(), "back" | "return" | "previous")
+            || words
+                .windows(2)
+                .any(|window| window[0] == "previous" && window[1] == "page")
     }
 }
 
@@ -589,30 +664,45 @@ impl DecisionRequest {
                     "nth": candidate.nth,
                     "position": position,
                     "activates": candidate.activates,
+                    "supports": candidate.supported_operations(),
                 }),
             );
         }
 
+        let history_back = instruction_requests_history_back(&input.instruction);
         let state = json!({
             "instruction": input.instruction,
             "page": { "url": input.url, "title": input.title },
             "value_keys": input.value_keys,
             "candidates": candidate_index,
             "candidates_truncated": input.truncated,
+            "history_back_requested": history_back,
         });
 
         let mut questions = Map::new();
         let wait_offered = wait_is_offered(input);
+        let mut operation_criteria = operation_criteria(wait_offered);
+        if history_back {
+            // A previous-page request with no named control can only be
+            // browser history. Hiding target-taking operations also removes the
+            // independent target head's pull toward "Return to ..." links.
+            if let Some(criteria) = operation_criteria.as_object_mut() {
+                for operation in ["click", "fill", "select"] {
+                    criteria.remove(operation);
+                }
+            }
+        }
         questions.insert(
             "operation".to_string(),
             json!({
                 "type": "choice",
-                "instructions": "Which single operation should be performed next to satisfy the instruction? Choose click, fill, or select only when the instruction acts on an offered element and the operation fits that element's role: click activates a link, button, checkbox, radio, option, menuitem, tab, or a combobox that opens a menu; fill enters text into a textbox, searchbox, or editable combobox; select chooses a value in a combobox or listbox. Choose fill or select only when value_keys lists a value. Choose scroll_down or scroll_up when the instruction asks to scroll, even if a link with a matching name is offered. Choose wait only when the instruction asks to wait, settle, load, or wait for a condition to appear, or when no offered element matches a target named in the instruction. Choose done only when the page already shows the result and the instruction does not ask to wait, go back, scroll, or change the page.",
-                "criteria": operation_criteria(wait_offered),
+                "instructions": "Which single operation should be performed next to satisfy the instruction? Choose click, fill, or select only when the instruction acts on an offered element and the operation fits that element's role: click activates a link, button, checkbox, radio, option, menuitem, tab, or a combobox that opens a menu; fill enters text into a textbox, searchbox, or editable combobox; select chooses a value in a combobox or listbox. Choose fill or select when the instruction asks to enter text or choose a dropdown value, even when value_keys is empty; the result is blocked rather than turned into a click. Choose scroll_down or scroll_up when the instruction asks to scroll, even if a link with a matching name is offered. Choose back when the instruction refers to a previous page, the page before this one, or the page it came from; back-like links and buttons on the page are in-page controls, not history. Choose wait only when the instruction asks to wait, settle, load, or wait for a condition to appear, or when no offered element matches a target named in the instruction.",
+                "criteria": operation_criteria,
             }),
         );
 
-        if !input.candidates.is_empty() {
+        let target_offered = !history_back && !input.candidates.is_empty();
+        if target_offered {
             let mut criteria = Map::new();
             for candidate in &input.candidates {
                 criteria.insert(candidate.key.clone(), json!(candidate.description()));
@@ -621,7 +711,7 @@ impl DecisionRequest {
                 "target".to_string(),
                 json!({
                     "type": "choice",
-                    "instructions": "Which offered element should click, fill, or select act on? Ignore this question for other operations. Pick an element whose role fits the operation: click needs an element that activates on click, fill needs a textbox, searchbox, or editable combobox, and select needs a combobox or listbox. Prefer the element whose role and name match the requested action over a nearby input field.",
+                    "instructions": "Which offered element should click, fill, or select act on? Ignore this question for other operations. Pick an element whose role and name match the operation and the instruction. The state lists each candidate's supported operations; an unsupported pairing is blocked, not run. Prefer the element whose role and name match the requested action over a nearby input field.",
                     "criteria": Value::Object(criteria),
                 }),
             );
@@ -650,7 +740,7 @@ impl DecisionRequest {
             state,
             questions: Value::Object(questions),
             offered: OfferedHeads {
-                target: !input.candidates.is_empty(),
+                target: target_offered,
                 value_key: ask_value,
             },
         }
@@ -920,27 +1010,30 @@ pub fn validate_decision(
         DecideError::InvalidAnswer("The operation answer was not a known operation.".to_string())
     })?;
 
+    let mut reasons: Vec<String> = Vec::new();
     let mut target = None;
     let mut target_head = None;
     if decision_request.offered.target {
         let (choice, probabilities, confidence) = choice_answer(answers, "target", questions)?;
         if operation.needs_target() {
+            // Keep the target so the blocked result can still name what was
+            // chosen. A pairing that cannot run is a blocked decision, not an
+            // invalid answer: the decider picked two offered options.
+            target = Some(choice.clone());
+            target_head = Some((probabilities, confidence));
             if !state_candidate_supports(&decision_request.state, &choice, operation) {
-                return Err(DecideError::InvalidAnswer(
-                    "The chosen target does not support the operation.".to_string(),
+                reasons.push(format!(
+                    "The chosen target does not support {}.",
+                    operation.as_str()
                 ));
             }
-            target = Some(choice);
-            target_head = Some((probabilities, confidence));
         }
         // The target head is asked in the same request, so a non-target
         // operation may still return one. It is ignored, not an error.
     }
 
-    let mut blocked_reason = None;
     if operation.needs_target() && target.is_none() {
-        blocked_reason =
-            Some("The operation needs a target, but no target was offered.".to_string());
+        reasons.push("The operation needs a target, but no target was offered.".to_string());
     }
 
     let mut value_key = None;
@@ -957,9 +1050,16 @@ pub fn validate_decision(
     }
 
     if operation.needs_value() && value_key.is_none() {
-        blocked_reason =
-            Some("The operation needs a caller-supplied value, but none was supplied.".to_string());
+        reasons.push(
+            "The operation needs a caller-supplied value, but none was supplied.".to_string(),
+        );
     }
+
+    let blocked_reason = if reasons.is_empty() {
+        None
+    } else {
+        Some(reasons.join(" "))
+    };
 
     let gating = match target_head {
         Some((probabilities, confidence)) => (probabilities, confidence),
@@ -1184,11 +1284,18 @@ impl LlmDecider {
 
     fn schema(request: &DecisionRequest) -> Value {
         let mut properties = Map::new();
+        let operations: Vec<&String> = request
+            .questions
+            .get("operation")
+            .and_then(|q| q.get("criteria"))
+            .and_then(|c| c.as_object())
+            .map(|criteria| criteria.keys().collect())
+            .unwrap_or_default();
         properties.insert(
             "operation".to_string(),
             json!({
                 "type": "string",
-                "enum": OPERATIONS,
+                "enum": operations,
             }),
         );
         let mut required = vec![json!("operation")];
@@ -1744,7 +1851,7 @@ mod tests {
         };
         assert!(text("wait").contains("instruction asks to wait"));
         assert!(text("wait").contains("finish loading"));
-        assert!(text("done").contains("do not choose done when the instruction asks to wait"));
+        assert!(!criteria.contains_key("done"));
         assert!(text("back").contains("browser history"));
         assert!(text("back").contains("previous page"));
         assert!(text("scroll_down").contains("instruction asks to scroll down"));
@@ -1752,6 +1859,8 @@ mod tests {
         assert!(text("scroll_up").contains("back to top"));
         assert!(text("fill").contains("value_keys"));
         assert!(text("select").contains("value_keys"));
+        assert!(text("fill").contains("blocked"));
+        assert!(text("select").contains("blocked"));
         let instructions = request.questions["operation"]["instructions"]
             .as_str()
             .unwrap_or_default()
@@ -1759,6 +1868,141 @@ mod tests {
         assert!(instructions.contains("value_keys"));
         assert!(instructions.contains("scroll_down or scroll_up"));
         assert!(instructions.contains("wait"));
+    }
+
+    #[test]
+    fn history_back_instruction_hides_target_taking_operations() {
+        // Novel wording, not a fixture name: a return to an earlier location.
+        let mut input = input();
+        input.instruction = "Take me back to the roster I came from".to_string();
+        input.candidates.push(Candidate {
+            key: "e3".to_string(),
+            role: "link".to_string(),
+            name: "Return to roster".to_string(),
+            nth: None,
+            activates: true,
+        });
+        let request = DecisionRequest::build("jev-latest", &input, false);
+        let offered = offered_keys(&request, "operation");
+        assert!(offered.contains(&"back".to_string()));
+        assert!(!offered.contains(&"click".to_string()));
+        assert!(!request.offered.target);
+        assert!(request.questions.get("target").is_none());
+        let answers = json!({
+            "operation": answer("back", probabilities(&request, "operation", "back", 0.9)),
+        });
+        let decision = validate_decision(&request, &answers).unwrap();
+        assert_eq!(decision.operation, Operation::Back);
+        assert!(decision.blocked_reason.is_none());
+    }
+
+    #[test]
+    fn explicit_click_on_a_back_control_keeps_the_target_head() {
+        // The same kind of visible control is clickable when the instruction
+        // names the control instead of asking for an earlier page.
+        let mut input = input();
+        input.instruction = "Click the Return to roster link".to_string();
+        input.candidates.push(Candidate {
+            key: "e3".to_string(),
+            role: "link".to_string(),
+            name: "Return to roster".to_string(),
+            nth: None,
+            activates: true,
+        });
+        let request = DecisionRequest::build("jev-latest", &input, false);
+        assert!(request.offered.target);
+        assert!(offered_keys(&request, "operation").contains(&"click".to_string()));
+        let answers = json!({
+            "operation": answer("click", probabilities(&request, "operation", "click", 0.9)),
+            "target": answer("e3", probabilities(&request, "target", "e3", 0.95)),
+        });
+        let decision = validate_decision(&request, &answers).unwrap();
+        assert_eq!(decision.operation, Operation::Click);
+        assert_eq!(decision.target.as_deref(), Some("e3"));
+    }
+
+    #[test]
+    fn history_back_cues_are_generic_page_transitions() {
+        for instruction in [
+            "Go back to the previous page",
+            "Return to the folder I opened before this one",
+            "Take me back to the screen before this step",
+            "Go to the page under this panel",
+            "Return to where I was",
+            "Go back to the account page from before",
+        ] {
+            assert!(
+                instruction_requests_history_back(instruction),
+                "{instruction}"
+            );
+        }
+        for instruction in [
+            "Return to the cart and change the quantity",
+            "Scroll back up toward the top",
+            "Click the Back to invoices link",
+            "Press the Previous page button",
+            "Wait for the page to finish loading",
+        ] {
+            assert!(
+                !instruction_requests_history_back(instruction),
+                "{instruction}"
+            );
+        }
+    }
+
+    #[test]
+    fn back_like_candidate_is_described_as_an_in_page_control() {
+        let control = Candidate {
+            key: "e5".to_string(),
+            role: "link".to_string(),
+            name: "Return to invoices".to_string(),
+            nth: None,
+            activates: true,
+        };
+        assert!(control.is_back_like_control());
+        assert!(control.description().contains("in-page control"));
+        let ordinary = Candidate {
+            name: "Invoices".to_string(),
+            ..control
+        };
+        assert!(!ordinary.is_back_like_control());
+        assert!(!ordinary.description().contains("in-page control"));
+    }
+
+    #[test]
+    fn state_lists_the_operations_each_candidate_supports() {
+        let input = DecisionInput {
+            instruction: "Enter the tracking code".to_string(),
+            url: "https://example.com".to_string(),
+            title: "Example".to_string(),
+            value_keys: vec!["code".to_string()],
+            candidates: vec![
+                Candidate {
+                    key: "e1".to_string(),
+                    role: "textbox".to_string(),
+                    name: "Tracking code".to_string(),
+                    nth: None,
+                    activates: false,
+                },
+                Candidate {
+                    key: "e2".to_string(),
+                    role: "combobox".to_string(),
+                    name: "Carrier".to_string(),
+                    nth: None,
+                    activates: false,
+                },
+            ],
+            truncated: false,
+        };
+        let request = DecisionRequest::build("jev-latest", &input, true);
+        assert_eq!(
+            request.state["candidates"]["e1"]["supports"],
+            json!(["fill"])
+        );
+        assert_eq!(
+            request.state["candidates"]["e2"]["supports"],
+            json!(["fill", "select"])
+        );
     }
 
     #[test]
@@ -1805,6 +2049,25 @@ mod tests {
     }
 
     #[test]
+    fn done_is_not_an_offered_operation() {
+        let mut input = input();
+        input.instruction =
+            "Everything on this report already matches what I asked for".to_string();
+        let request = DecisionRequest::build("jev-latest", &input, false);
+        let offered = offered_keys(&request, "operation");
+        assert!(!offered.contains(&"done".to_string()));
+        assert_eq!(Operation::parse("done"), None);
+        let answers = json!({
+            "operation": answer("done", probabilities(&request, "operation", "click", 0.9)),
+            "target": answer("e1", probabilities(&request, "target", "e1", 0.95)),
+        });
+        assert!(matches!(
+            validate_decision(&request, &answers),
+            Err(DecideError::InvalidAnswer(_))
+        ));
+    }
+
+    #[test]
     fn validates_a_correct_answer() {
         let request = DecisionRequest::build("jev-latest", &input(), false);
         let decision = validate_decision(&request, &valid_answers(&request)).unwrap();
@@ -1836,7 +2099,7 @@ mod tests {
             .as_object()
             .cloned()
             .expect("probabilities");
-        operation.remove("done");
+        operation.remove("back");
         let answers = json!({
             "operation": answer("click", Value::Object(operation)),
             "target": answer("e1", probabilities(&request, "target", "e1", 0.95)),
@@ -1945,16 +2208,78 @@ mod tests {
     }
 
     #[test]
-    fn click_on_a_textbox_is_not_an_offered_combination() {
+    fn click_on_a_textbox_is_blocked_not_an_error() {
         let request = DecisionRequest::build("jev-latest", &textbox_input(), false);
         let answers = json!({
             "operation": answer("click", probabilities(&request, "operation", "click", 0.9)),
             "target": answer("e1", probabilities(&request, "target", "e1", 0.95)),
         });
-        assert!(matches!(
-            validate_decision(&request, &answers),
-            Err(DecideError::InvalidAnswer(_))
-        ));
+        let decision = validate_decision(&request, &answers).unwrap();
+        assert_eq!(decision.operation, Operation::Click);
+        assert_eq!(decision.target.as_deref(), Some("e1"));
+        assert!(decision
+            .blocked_reason
+            .as_deref()
+            .is_some_and(|reason| reason.contains("does not support click")));
+    }
+
+    #[test]
+    fn select_on_a_non_select_target_is_blocked_not_an_error() {
+        let input = DecisionInput {
+            instruction: "Choose the settlement currency".to_string(),
+            url: "https://example.com".to_string(),
+            title: "Example".to_string(),
+            value_keys: vec![],
+            candidates: vec![Candidate {
+                key: "e7".to_string(),
+                role: "button".to_string(),
+                name: "Settlement currency".to_string(),
+                nth: None,
+                activates: true,
+            }],
+            truncated: false,
+        };
+        let request = DecisionRequest::build("jev-latest", &input, false);
+        let answers = json!({
+            "operation": answer("select", probabilities(&request, "operation", "select", 0.9)),
+            "target": answer("e7", probabilities(&request, "target", "e7", 0.95)),
+        });
+        let decision = validate_decision(&request, &answers).unwrap();
+        assert_eq!(decision.operation, Operation::Select);
+        assert_eq!(decision.target.as_deref(), Some("e7"));
+        let reason = decision.blocked_reason.as_deref().unwrap_or_default();
+        assert!(reason.contains("does not support select"), "{reason}");
+        assert!(reason.contains("caller-supplied value"), "{reason}");
+    }
+
+    #[test]
+    fn select_on_a_combobox_without_a_value_is_blocked() {
+        let input = DecisionInput {
+            instruction: "Switch the settlement currency to euros".to_string(),
+            url: "https://example.com".to_string(),
+            title: "Example".to_string(),
+            value_keys: vec![],
+            candidates: vec![Candidate {
+                key: "e3".to_string(),
+                role: "combobox".to_string(),
+                name: "Settlement currency".to_string(),
+                nth: None,
+                activates: false,
+            }],
+            truncated: false,
+        };
+        let request = DecisionRequest::build("jev-latest", &input, false);
+        let answers = json!({
+            "operation": answer("select", probabilities(&request, "operation", "select", 0.9)),
+            "target": answer("e3", probabilities(&request, "target", "e3", 0.95)),
+        });
+        let decision = validate_decision(&request, &answers).unwrap();
+        assert_eq!(decision.operation, Operation::Select);
+        assert_eq!(decision.target.as_deref(), Some("e3"));
+        assert!(decision
+            .blocked_reason
+            .as_deref()
+            .is_some_and(|reason| reason.contains("caller-supplied value")));
     }
 
     struct ScriptedDecider {
@@ -2128,7 +2453,7 @@ mod tests {
                     "confidence": 1.0,
                     "probabilities": {
                         "click": 1.0, "fill": 0.0, "select": 0.0, "scroll_down": 0.0,
-                        "scroll_up": 0.0, "back": 0.0, "wait": 0.0, "done": 0.0
+                        "scroll_up": 0.0, "back": 0.0
                     }
                 },
                 "target": {

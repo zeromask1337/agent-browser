@@ -7746,18 +7746,6 @@ pub(crate) async fn handle_act_with(
         }
     }
 
-    if decision.operation == super::decide::Operation::Done {
-        return Ok(act_result(
-            "done",
-            &decision,
-            &page,
-            value_key.as_deref(),
-            dry_run,
-            decider,
-            None,
-        ));
-    }
-
     if dry_run {
         return Ok(act_result(
             "dry_run",
@@ -7816,7 +7804,6 @@ pub(crate) async fn handle_act_with(
         }
         super::decide::Operation::Back => json!({ "id": id, "action": "back" }),
         super::decide::Operation::Wait => json!({ "id": id, "action": "wait", "timeout": 500 }),
-        super::decide::Operation::Done => unreachable!("done returned before execution"),
     };
 
     let action_result = run_act_subcommand(sub_action, state).await?;
