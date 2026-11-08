@@ -16608,6 +16608,44 @@ struct EvalCase {
 struct EvalExpect {
     operation: String,
     target_name: Option<String>,
+    /// When true, the decision must also be blocked for lack of a value.
+    #[serde(default)]
+    blocked: bool,
+}
+
+/// Cases file for the decision eval. `AGENT_BROWSER_DECIDE_CASES` overrides
+/// the checked-in default so a held-out set can run against the same runner.
+fn eval_cases_path_from(override_path: Option<std::ffi::OsString>) -> std::path::PathBuf {
+    override_path
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| {
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("evals")
+                .join("decide")
+                .join("cases.json")
+        })
+}
+
+fn eval_cases_path() -> std::path::PathBuf {
+    eval_cases_path_from(std::env::var_os("AGENT_BROWSER_DECIDE_CASES"))
+}
+
+/// Fixtures live beside the cases file, or in the native test fixtures when a
+/// cases file points at a shared fixture directory.
+fn eval_fixture_path(cases_path: &std::path::Path, fixture: &str) -> std::path::PathBuf {
+    let sibling = cases_path
+        .parent()
+        .unwrap_or_else(|| std::path::Path::new("."))
+        .join("fixtures")
+        .join(fixture);
+    if sibling.is_file() {
+        return sibling;
+    }
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("src")
+        .join("native")
+        .join("test_fixtures")
+        .join(fixture)
 }
 
 struct CountingDecider<'a> {
@@ -16660,13 +16698,11 @@ fn eval_percentile(sorted: &[f64], percentile: f64) -> f64 {
 #[ignore]
 async fn e2e_decide_eval() {
     use super::decide::Decider as _;
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("evals")
-        .join("decide")
-        .join("cases.json");
+    let path = eval_cases_path();
     let raw = std::fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("cannot read {}: {}", path.display(), error));
-    let file: EvalFile = serde_json::from_str(&raw).expect("cases.json must parse");
+    let file: EvalFile = serde_json::from_str(&raw)
+        .unwrap_or_else(|error| panic!("{} must parse: {}", path.display(), error));
 
     let decider = super::decide::decider_from_env().expect("set AGENT_BROWSER_DECIDER and its key");
     let counting = CountingDecider {
@@ -16684,17 +16720,19 @@ async fn e2e_decide_eval() {
         .await,
     );
 
-    let fixture_dir = path.parent().unwrap().join("fixtures");
     let mut correct = 0usize;
     let mut wrong_actions = 0usize;
     let mut errors = 0usize;
     let mut latencies: Vec<f64> = Vec::new();
     let mut calls = 0u64;
     let mut rows: Vec<String> = Vec::new();
+    let mut misses: Vec<String> = Vec::new();
 
     for (index, case) in file.cases.iter().enumerate() {
-        let html = std::fs::read_to_string(fixture_dir.join(&case.fixture))
-            .unwrap_or_else(|error| panic!("cannot read fixture {}: {}", case.fixture, error));
+        let fixture_path = eval_fixture_path(&path, &case.fixture);
+        let html = std::fs::read_to_string(&fixture_path).unwrap_or_else(|error| {
+            panic!("cannot read fixture {}: {}", fixture_path.display(), error)
+        });
         let url = format!("data:text/html;base64,{}", STANDARD.encode(html));
         let nav = execute_command(
             &json!({ "id": format!("eval-nav-{index}"), "action": "navigate", "url": url }),
@@ -16750,11 +16788,46 @@ async fn e2e_decide_eval() {
                     Some(expected) => target_name.as_deref() == Some(expected.as_str()),
                     None => true,
                 };
-                let ok = operation_ok && target_ok;
+                let blocked_ok = !case.expect.blocked || decision.blocked_reason.is_some();
+                let ok = operation_ok && target_ok && blocked_ok;
                 if ok {
                     correct += 1;
                 } else {
                     wrong_actions += 1;
+                    let offered = page
+                        .candidates
+                        .iter()
+                        .map(|candidate| {
+                            format!(
+                                "{}={}/{}",
+                                candidate.key,
+                                candidate.role,
+                                if candidate.name.is_empty() {
+                                    "(unnamed)"
+                                } else {
+                                    candidate.name.as_str()
+                                }
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    misses.push(format!(
+                        "MISS {}: instruction {:?}; expected {} target {:?}{}; got {} target {:?}{}; blocked_reason {:?}; candidates [{}]",
+                        case.name,
+                        case.instruction,
+                        case.expect.operation,
+                        case.expect.target_name,
+                        if case.expect.blocked { " blocked" } else { "" },
+                        decision.operation.as_str(),
+                        target_name,
+                        decision
+                            .target
+                            .as_deref()
+                            .map(|key| format!(" ({})", key))
+                            .unwrap_or_default(),
+                        decision.blocked_reason,
+                        offered
+                    ));
                 }
                 rows.push(format!(
                     "{} | {} | {}{} | {} | {:.0} | {}",
@@ -16766,6 +16839,9 @@ async fn e2e_decide_eval() {
                     elapsed_ms,
                     if ok { "ok" } else { "FAIL" }
                 ));
+                if case.expect.blocked && !blocked_ok {
+                    rows.last_mut().unwrap().push_str(" [not blocked]");
+                }
                 if input_tokens > 0 {
                     rows.last_mut()
                         .unwrap()
@@ -16816,6 +16892,9 @@ async fn e2e_decide_eval() {
     for row in &rows {
         println!("{}", row);
     }
+    for miss in &misses {
+        println!("\n{}", miss);
+    }
     println!("\ntop-1 accuracy: {:.1}% ({}/{})", accuracy, correct, total);
     println!(
         "wrong actions: {} ({:.1}%), errors: {}",
@@ -16855,5 +16934,29 @@ async fn e2e_decide_eval() {
         } else {
             "fail"
         }
+    );
+}
+
+#[test]
+fn eval_cases_path_defaults_and_honors_override() {
+    let default = eval_cases_path_from(None);
+    assert!(
+        default.ends_with("evals/decide/cases.json"),
+        "{}",
+        default.display()
+    );
+    assert!(default.is_file(), "{}", default.display());
+
+    let overridden = eval_cases_path_from(Some(std::ffi::OsString::from("/tmp/heldout.json")));
+    assert_eq!(overridden, std::path::PathBuf::from("/tmp/heldout.json"));
+
+    let cases = eval_cases_path_from(None);
+    let sibling = eval_fixture_path(&cases, "login.html");
+    assert!(sibling.is_file(), "{}", sibling.display());
+    let heldout = eval_fixture_path(&cases, "heldout_similar.html");
+    assert!(
+        heldout.ends_with("src/native/test_fixtures/heldout_similar.html"),
+        "{}",
+        heldout.display()
     );
 }
