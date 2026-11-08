@@ -7778,6 +7778,20 @@ pub(crate) async fn handle_act_with(
     };
 
     let action_result = run_act_subcommand(sub_action, state).await?;
+    if let Some(pending) = action_result.get("confirmation_id").cloned() {
+        let mut result = act_result(
+            "blocked",
+            &decision,
+            &page,
+            value_key.as_deref(),
+            false,
+            decider,
+            Some(action_result),
+        );
+        result["confirmation_required"] = json!(true);
+        result["confirmation_id"] = pending;
+        return Ok(result);
+    }
     Ok(act_result(
         "executed",
         &decision,

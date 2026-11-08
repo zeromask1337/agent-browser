@@ -956,6 +956,18 @@ fn print_primary_response(resp: &Response, action: Option<&str>, opts: &OutputOp
         print_lifecycle_note(data);
 
         if action == Some("act") {
+            if data.get("confirmation_required").and_then(|v| v.as_bool()) == Some(true) {
+                let id = data
+                    .get("confirmation_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                println!(
+                    "{} Action needs confirmation. Run: agent-browser confirm {}",
+                    color::warning_indicator(),
+                    id
+                );
+                return;
+            }
             let status = data.get("status").and_then(|v| v.as_str()).unwrap_or("");
             let operation = data.get("operation").and_then(|v| v.as_str()).unwrap_or("");
             let target = data.get("target").and_then(|v| v.as_str()).unwrap_or("");
