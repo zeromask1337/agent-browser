@@ -146,6 +146,8 @@ agent-browser act "<instruction>" [--dry-run] [--min-confidence <0..1>] [--value
 
 The operation set is `click`, `fill`, `select`, `scroll_down`, `scroll_up`, `back`, `wait`, and `done`. A target is required for `click`, `fill`, and `select`. The decider can only return an offered ref, so an answer outside the candidate set runs nothing.
 
+Disabled elements are never offered: the `disabled` attribute, `aria-disabled="true"`, and controls inside a disabled fieldset are dropped before the decision. `click` is offered only for link, button, checkbox, radio, option, menuitem, tab, and a combobox that opens a menu. Textboxes and searchboxes take `fill`, so a click on one is rejected and a fill with no supplied value is blocked instead of turning into a click. `wait` is offered only when the instruction asks to wait, settle, load, or wait for a condition to appear, or when no offered element matches a target named in the instruction.
+
 <table>
   <thead>
     <tr><th>Option</th><th>Effect</th></tr>

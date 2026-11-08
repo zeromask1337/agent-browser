@@ -13,6 +13,8 @@ Run `snapshot` first. `act` offers refs from the current snapshot and does not c
 
 The decider picks one of `click`, `fill`, `select`, `scroll_down`, `scroll_up`, `back`, `wait`, and `done`. `click`, `fill`, and `select` need a target. `scroll_down` and `scroll_up` move 600 px. `wait` pauses for 500 ms. `done` means the instruction is already satisfied.
 
+`wait` is offered only when the instruction asks to wait, settle, load, or wait for a condition to appear, or when no offered element matches a target named in the instruction. When the instruction names an offered target, `wait` is not in the operation set, so the decider has to act on that target or report a different operation.
+
 ## Values
 
 Pass the values the step needs with `--value`. Repeat the flag for several values.
@@ -44,6 +46,10 @@ The result also includes `operation`, `target`, `valueKey`, `confidence`, `proba
 ## Candidates
 
 Only rendered, actionable elements are offered: link, button, textbox, searchbox, combobox, checkbox, radio, option, menuitem, and tab. Elements outside the viewport are included because an action scrolls the chosen ref into view before it runs. The list keeps DOM order and stops at 80 elements. `candidatesTruncated` reports when the cap dropped any. To narrow the list, snapshot a region with `snapshot -s <selector>` or scroll first.
+
+Disabled elements are never offered. The `disabled` attribute, `aria-disabled="true"`, and controls inside a disabled fieldset are dropped before the decision, because none of them can be activated or edited.
+
+Roles are also matched to operations. `click` is offered only for link, button, checkbox, radio, option, menuitem, tab, and a combobox that opens a menu. Textboxes and searchboxes take `fill`, so a click on one is rejected as an invalid answer and a fill with no supplied value is blocked instead of turning into a click. `fill` targets a textbox, searchbox, or editable combobox. `select` targets a combobox or listbox.
 
 Unusual answers are contained. A choice outside the offered options, a probability set that does not cover the offered options, or a choice that is not the most likely option fails validation. `act` retries once, and a second invalid answer is an error; nothing runs.
 

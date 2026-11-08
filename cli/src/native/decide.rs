@@ -124,7 +124,7 @@ impl Operation {
     }
 }
 
-fn operation_criteria() -> Value {
+fn operation_criteria(include_wait: bool) -> Value {
     let mut criteria = Map::new();
     criteria.insert(
         "click".to_string(),
@@ -150,15 +150,62 @@ fn operation_criteria() -> Value {
         "back".to_string(),
         json!("Go back to the previous page in browser history. Choose back for an instruction about the page before this one, even when the page also shows a link or button named Previous page."),
     );
-    criteria.insert(
-        "wait".to_string(),
-        json!("Wait for the page to finish loading or settle, then look again. Choose wait whenever the instruction asks to wait, even if the page already looks loaded."),
-    );
+    if include_wait {
+        criteria.insert(
+            "wait".to_string(),
+            json!("Wait for the page to finish loading or settle, then look again. Choose wait whenever the instruction asks to wait, settle, load, or wait for a condition to appear. Wait is not offered when the instruction names an offered element to act on."),
+        );
+    }
     criteria.insert(
         "done".to_string(),
         json!("The result the instruction asks for is already visible on the page, so no action is needed. Do not choose done when the instruction asks to wait, to go back, or to change the page."),
     );
     Value::Object(criteria)
+}
+
+/// Words that make a wait legitimate even when the instruction also names an
+/// offered element. Matched by prefix so "waiting", "settles", and "loaded"
+/// count.
+const WAIT_CUES: &[&str] = &[
+    "wait", "settl", "load", "appear", "finish", "complet", "ready", "until", "spinner", "delay",
+];
+
+fn instruction_requests_wait(instruction: &str) -> bool {
+    normalized_words(instruction)
+        .iter()
+        .any(|word| WAIT_CUES.iter().any(|cue| word.starts_with(cue)))
+}
+
+/// Lowercase alphanumeric words with punctuation removed, so an accessible
+/// name can be compared against the instruction without partial-word matches.
+fn normalized_words(text: &str) -> Vec<String> {
+    text.to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|word| !word.is_empty())
+        .map(str::to_string)
+        .collect()
+}
+
+/// Whether the instruction names this candidate's accessible name.
+fn instruction_names_candidate(instruction: &str, name: &str) -> bool {
+    let name_words = normalized_words(name);
+    if name_words.is_empty() {
+        return false;
+    }
+    let instruction_words = normalized_words(instruction);
+    instruction_words
+        .windows(name_words.len())
+        .any(|window| window == name_words.as_slice())
+}
+
+/// Wait is offered when the instruction asks for it, or when no offered
+/// candidate matches a target named in the instruction.
+fn wait_is_offered(input: &DecisionInput) -> bool {
+    instruction_requests_wait(&input.instruction)
+        || !input
+            .candidates
+            .iter()
+            .any(|candidate| instruction_names_candidate(&input.instruction, &candidate.name))
 }
 
 /// One offered element.
@@ -550,12 +597,13 @@ impl DecisionRequest {
         });
 
         let mut questions = Map::new();
+        let wait_offered = wait_is_offered(input);
         questions.insert(
             "operation".to_string(),
             json!({
                 "type": "choice",
-                "instructions": "Which single operation should be performed next to satisfy the instruction? Choose click, fill, or select only when the instruction acts on an offered element and the operation fits that element's role: click activates a link, button, checkbox, radio, option, menuitem, tab, or a combobox that opens a menu; fill enters text into a textbox, searchbox, or editable combobox; select chooses a value in a combobox or listbox. Choose fill or select only when value_keys lists a value. Choose scroll_down or scroll_up when the instruction asks to scroll, even if a link with a matching name is offered. Choose wait when the instruction asks to wait or the page is still loading. Choose done only when the page already shows the result and the instruction does not ask to wait, go back, scroll, or change the page.",
-                "criteria": operation_criteria(),
+                "instructions": "Which single operation should be performed next to satisfy the instruction? Choose click, fill, or select only when the instruction acts on an offered element and the operation fits that element's role: click activates a link, button, checkbox, radio, option, menuitem, tab, or a combobox that opens a menu; fill enters text into a textbox, searchbox, or editable combobox; select chooses a value in a combobox or listbox. Choose fill or select only when value_keys lists a value. Choose scroll_down or scroll_up when the instruction asks to scroll, even if a link with a matching name is offered. Choose wait only when the instruction asks to wait, settle, load, or wait for a condition to appear, or when no offered element matches a target named in the instruction. Choose done only when the page already shows the result and the instruction does not ask to wait, go back, scroll, or change the page.",
+                "criteria": operation_criteria(wait_offered),
             }),
         );
 
@@ -1655,7 +1703,9 @@ mod tests {
                 .as_object()
                 .unwrap()
                 .len(),
-            OPERATIONS.len()
+            // The instruction names the offered Submit button, so wait is not
+            // an offered operation.
+            OPERATIONS.len() - 1
         );
         assert_eq!(
             request.questions["target"]["criteria"]
@@ -1674,7 +1724,9 @@ mod tests {
 
     #[test]
     fn operation_criteria_distinguish_wait_done_and_history_back() {
-        let request = DecisionRequest::build("jev-latest", &input(), false);
+        let mut input = input();
+        input.instruction = "Wait for the page to finish loading".to_string();
+        let request = DecisionRequest::build("jev-latest", &input, false);
         let criteria = request.questions["operation"]["criteria"]
             .as_object()
             .expect("operation criteria");
@@ -1702,6 +1754,49 @@ mod tests {
         assert!(instructions.contains("value_keys"));
         assert!(instructions.contains("scroll_down or scroll_up"));
         assert!(instructions.contains("wait"));
+    }
+
+    #[test]
+    fn wait_is_not_offered_when_the_instruction_names_an_offered_candidate() {
+        // input() names the offered Submit button and does not ask to wait.
+        let request = DecisionRequest::build("jev-latest", &input(), false);
+        assert!(!offered_keys(&request, "operation").contains(&"wait".to_string()));
+        let answers = json!({
+            "operation": answer("wait", probabilities(&request, "operation", "click", 0.9)),
+            "target": answer("e1", probabilities(&request, "target", "e1", 0.95)),
+        });
+        assert!(matches!(
+            validate_decision(&request, &answers),
+            Err(DecideError::InvalidAnswer(_))
+        ));
+    }
+
+    #[test]
+    fn wait_is_offered_when_the_instruction_asks_to_wait() {
+        let mut input = input();
+        input.instruction = "Wait for the page to finish loading".to_string();
+        let request = DecisionRequest::build("jev-latest", &input, false);
+        assert!(offered_keys(&request, "operation").contains(&"wait".to_string()));
+        let answers = json!({
+            "operation": answer("wait", probabilities(&request, "operation", "wait", 0.9)),
+            "target": answer("e1", probabilities(&request, "target", "e1", 0.95)),
+        });
+        let decision = validate_decision(&request, &answers).unwrap();
+        assert_eq!(decision.operation, Operation::Wait);
+    }
+
+    #[test]
+    fn wait_is_offered_when_no_candidate_matches_the_instruction() {
+        let mut input = input();
+        input.instruction = "Refresh the dashboard".to_string();
+        let request = DecisionRequest::build("jev-latest", &input, false);
+        assert!(offered_keys(&request, "operation").contains(&"wait".to_string()));
+        let answers = json!({
+            "operation": answer("wait", probabilities(&request, "operation", "wait", 0.9)),
+            "target": answer("e1", probabilities(&request, "target", "e1", 0.95)),
+        });
+        let decision = validate_decision(&request, &answers).unwrap();
+        assert_eq!(decision.operation, Operation::Wait);
     }
 
     #[test]
