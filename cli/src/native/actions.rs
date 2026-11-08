@@ -7606,6 +7606,30 @@ fn act_result(
     })
 }
 
+/// A blocked result for a precondition that failed before any decision existed.
+fn act_blocked_without_decision(
+    page: &ActPage,
+    reason: &str,
+    dry_run: bool,
+    decider: &dyn super::decide::Decider,
+) -> Value {
+    json!({
+        "status": "blocked",
+        "operation": Value::Null,
+        "target": Value::Null,
+        "valueKey": Value::Null,
+        "confidence": 0.0,
+        "probabilities": {},
+        "fingerprint": page.fingerprint,
+        "dryRun": dry_run,
+        "decider": decider.name(),
+        "candidateCount": page.candidates.len(),
+        "candidatesTruncated": page.truncated,
+        "result": Value::Null,
+        "reason": reason,
+    })
+}
+
 async fn run_act_subcommand(cmd: Value, state: &mut DaemonState) -> Result<Value, String> {
     let response = execute_command(&cmd, state).await;
     if response.get("success").and_then(Value::as_bool) == Some(true) {
@@ -7655,10 +7679,12 @@ pub(crate) async fn handle_act_with(
 
     let mut page = capture_act_page(state).await?;
     if page.candidates.is_empty() {
-        return Err(
-            "No visible actionable candidates. Run snapshot to refresh refs, then try again."
-                .to_string(),
-        );
+        return Ok(act_blocked_without_decision(
+            &page,
+            "No rendered actionable candidates were offered. Run snapshot to refresh refs, then try again.",
+            dry_run,
+            decider,
+        ));
     }
 
     let mut decision = decide_for_page(&page, &instruction, &values, decider).await?;
@@ -7687,6 +7713,20 @@ pub(crate) async fn handle_act_with(
     let value_key = decision.value_key.clone();
     let needs_target = decision.operation.needs_target();
     let selected = decision.target.clone();
+
+    if let Some(reason) = decision.blocked_reason.as_deref() {
+        let mut result = act_result(
+            "blocked",
+            &decision,
+            &page,
+            value_key.as_deref(),
+            dry_run,
+            decider,
+            None,
+        );
+        result["reason"] = json!(reason);
+        return Ok(result);
+    }
 
     if decider.calibrated() {
         if let Some(min) = min_confidence {

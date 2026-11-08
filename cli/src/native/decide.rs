@@ -532,6 +532,9 @@ pub struct Decision {
     pub operation: Operation,
     pub target: Option<String>,
     pub value_key: Option<String>,
+    /// Set when the operation needs a target or value that was not offered.
+    /// Nothing runs; the caller reports `blocked` with this reason.
+    pub blocked_reason: Option<String>,
     /// Distribution that gated the decision: the target head for operations
     /// that need a target, otherwise the operation head.
     pub probabilities: Map<String, Value>,
@@ -768,10 +771,10 @@ pub fn validate_decision(
         // operation may still return one. It is ignored, not an error.
     }
 
+    let mut blocked_reason = None;
     if operation.needs_target() && target.is_none() {
-        return Err(DecideError::InvalidAnswer(
-            "The operation needs a target, but no target answer was offered.".to_string(),
-        ));
+        blocked_reason =
+            Some("The operation needs a target, but no target was offered.".to_string());
     }
 
     let mut value_key = None;
@@ -788,9 +791,8 @@ pub fn validate_decision(
     }
 
     if operation.needs_value() && value_key.is_none() {
-        return Err(DecideError::InvalidAnswer(
-            "The operation needs a caller-supplied value, but none was supplied.".to_string(),
-        ));
+        blocked_reason =
+            Some("The operation needs a caller-supplied value, but none was supplied.".to_string());
     }
 
     let gating = match target_head {
@@ -806,6 +808,7 @@ pub fn validate_decision(
         operation,
         target,
         value_key,
+        blocked_reason,
         probabilities: gating.0,
         confidence,
     })
@@ -1577,6 +1580,71 @@ mod tests {
             validate_decision(&request, &answers),
             Err(DecideError::InvalidAnswer(_))
         ));
+    }
+
+    #[tokio::test]
+    async fn blocked_decision_is_not_retried() {
+        let mut input = input();
+        input.candidates.clear();
+        let request = DecisionRequest::build("jev-latest", &input, false);
+        let answers = json!({
+            "operation": answer("operation", "click", json!({
+                "click": 0.9, "fill": 0.0, "select": 0.0, "scroll_down": 0.0,
+                "scroll_up": 0.0, "back": 0.0, "wait": 0.1, "done": 0.0
+            }))
+        });
+        let decider = Arc::new(ScriptedDecider {
+            answers: std::sync::Mutex::new(vec![Ok(answers)]),
+            calls: std::sync::atomic::AtomicUsize::new(0),
+        });
+        let decision = decide_with_retry(decider.as_ref(), &request).await.unwrap();
+        assert_eq!(decision.operation, Operation::Click);
+        assert!(decision
+            .blocked_reason
+            .as_deref()
+            .is_some_and(|reason| reason.contains("needs a target")));
+        assert_eq!(decider.calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn click_without_an_offered_target_is_blocked_not_an_error() {
+        let mut input = input();
+        input.candidates.clear();
+        let request = DecisionRequest::build("jev-latest", &input, false);
+        assert!(!request.offered.target);
+        let answers = json!({
+            "operation": answer("operation", "click", json!({
+                "click": 0.9, "fill": 0.0, "select": 0.0, "scroll_down": 0.0,
+                "scroll_up": 0.0, "back": 0.0, "wait": 0.1, "done": 0.0
+            }))
+        });
+        let decision = validate_decision(&request, &answers).unwrap();
+        assert_eq!(decision.operation, Operation::Click);
+        assert!(decision.target.is_none());
+        assert!(decision
+            .blocked_reason
+            .as_deref()
+            .is_some_and(|reason| reason.contains("needs a target")));
+    }
+
+    #[test]
+    fn fill_without_a_supplied_value_is_blocked_not_an_error() {
+        let request = DecisionRequest::build("jev-latest", &input(), false);
+        let answers = json!({
+            "operation": answer("operation", "fill", json!({
+                "click": 0.05, "fill": 0.9, "select": 0.0, "scroll_down": 0.0,
+                "scroll_up": 0.0, "back": 0.0, "wait": 0.05, "done": 0.0
+            })),
+            "target": answer("target", "e1", json!({ "e1": 0.95, "e2": 0.05 })),
+        });
+        let decision = validate_decision(&request, &answers).unwrap();
+        assert_eq!(decision.operation, Operation::Fill);
+        assert_eq!(decision.target.as_deref(), Some("e1"));
+        assert!(decision.value_key.is_none());
+        assert!(decision
+            .blocked_reason
+            .as_deref()
+            .is_some_and(|reason| reason.contains("caller-supplied value")));
     }
 
     struct ScriptedDecider {

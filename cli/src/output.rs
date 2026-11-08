@@ -978,13 +978,19 @@ fn print_primary_response(resp: &Response, action: Option<&str>, opts: &OutputOp
             let value_key = data.get("valueKey").and_then(|v| v.as_str()).unwrap_or("");
             match status {
                 "done" => println!("{} Done: nothing to run", color::success_indicator()),
-                "blocked" => println!(
-                    "{} Blocked at confidence {:.2}: {} {}",
-                    color::warning_indicator(),
-                    confidence,
-                    operation,
-                    target
-                ),
+                "blocked" => {
+                    if let Some(reason) = data.get("reason").and_then(|v| v.as_str()) {
+                        println!("{} Blocked: {}", color::warning_indicator(), reason);
+                    } else {
+                        println!(
+                            "{} Blocked at confidence {:.2}: {} {}",
+                            color::warning_indicator(),
+                            confidence,
+                            operation,
+                            target
+                        );
+                    }
+                }
                 "stale" => println!(
                     "{} Page changed twice; nothing ran",
                     color::warning_indicator()
@@ -2250,7 +2256,8 @@ The decider only sees the instruction, the page URL and title, candidate role
 and accessible name, and caller-supplied value key names. It never sees input
 values, passwords, cookies, storage, or auth vault entries. A chosen ref is
 re-validated against the page before it runs; if the page moved twice, act
-returns status stale and runs nothing.
+returns status stale and runs nothing. If the decision needs a target or value
+that was not offered, act returns status blocked with a reason and runs nothing.
 
 Options:
   --dry-run              Return the proposal without running it

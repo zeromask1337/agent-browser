@@ -33,13 +33,13 @@ The decider sees the value key names, never the values. It chooses which key goe
   <tbody>
     <tr><td><code>executed</code></td><td>The chosen action ran. <code>result</code> holds the action output.</td></tr>
     <tr><td><code>done</code></td><td>The instruction was already satisfied. Nothing ran.</td></tr>
-    <tr><td><code>blocked</code></td><td>Confidence was below <code>--min-confidence</code>. Nothing ran.</td></tr>
+    <tr><td><code>blocked</code></td><td>Confidence was below <code>--min-confidence</code>, or the chosen operation needs a target or value that was not offered. <code>reason</code> explains the second case. Nothing ran.</td></tr>
     <tr><td><code>stale</code></td><td>The page changed after two decisions. Nothing ran.</td></tr>
     <tr><td><code>dry_run</code></td><td>A proposal was returned and nothing ran.</td></tr>
   </tbody>
 </table>
 
-The result also includes `operation`, `target`, `valueKey`, `confidence`, `probabilities`, `fingerprint`, `candidateCount`, and `candidatesTruncated`.
+The result also includes `operation`, `target`, `valueKey`, `confidence`, `probabilities`, `fingerprint`, `candidateCount`, and `candidatesTruncated`. A blocked result includes `reason` when the chosen operation needs a target or value that was not offered.
 
 ## Candidates
 

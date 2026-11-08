@@ -171,7 +171,7 @@ agent-browser act "Click Submit" --min-confidence 0.8
 
 Set `AGENT_BROWSER_DECIDER` to `jev` or `llm`. There is no auto-selection. `jev` requires `TYPESAFE_API_KEY`; `llm` uses the same AI Gateway key as `chat`.
 
-The result reports `status`, `operation`, `target`, `valueKey`, `confidence`, `probabilities`, and `fingerprint`. Status is `executed`, `done`, `blocked`, or `stale`; `dry_run` is reported when no action ran. The target ref is checked again before it runs. If the page changed after the decision, `act` decides once more; if it changed again, it returns `stale` and runs nothing.
+The result reports `status`, `operation`, `target`, `valueKey`, `confidence`, `probabilities`, and `fingerprint`. Status is `executed`, `done`, `blocked`, or `stale`; `dry_run` is reported when no action ran. When the chosen operation needs a target or value that was not offered, status is `blocked` and `reason` explains why. Nothing runs in that case. The target ref is checked again before it runs. If the page changed after the decision, `act` decides once more; if it changed again, it returns `stale` and runs nothing.
 
 ## Wait
 
