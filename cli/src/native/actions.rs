@@ -3545,6 +3545,7 @@ async fn execute_command_inner(cmd: &Value, state: &mut DaemonState) -> Value {
         "check" => handle_check(cmd, state).await,
         "uncheck" => handle_uncheck(cmd, state).await,
         "wait" => handle_wait(cmd, state).await,
+        "act" => handle_act(cmd, state).await,
         "gettext" => handle_gettext(cmd, state).await,
         "getattribute" => handle_getattribute(cmd, state).await,
         "isvisible" => handle_isvisible(cmd, state).await,
@@ -7506,6 +7507,277 @@ async fn handle_wait(cmd: &Value, state: &mut DaemonState) -> Result<Value, Stri
     // Just a timeout wait
     tokio::time::sleep(tokio::time::Duration::from_millis(timeout_ms)).await;
     Ok(json!({ "waited": "timeout", "ms": timeout_ms }))
+}
+
+/// A candidate page state captured before and after a decision.
+struct ActPage {
+    url: String,
+    title: String,
+    candidates: Vec<super::decide::Candidate>,
+    fingerprint: String,
+    truncated: bool,
+}
+
+async fn capture_act_page(state: &DaemonState) -> Result<ActPage, String> {
+    let mgr = state.browser.as_ref().ok_or("Browser not launched")?;
+    let session_id = mgr.active_session_id()?.to_string();
+    let url = mgr.get_url().await.unwrap_or_default();
+    let title = mgr.get_title().await.unwrap_or_default();
+    let by_backend = super::decide::probe_visible_rects(&mgr.client, &session_id).await?;
+
+    let inputs = super::decide::candidate_inputs(&state.ref_map);
+    let mut visible = std::collections::HashMap::new();
+    let mut rect_by_key = std::collections::HashMap::new();
+    for input in &inputs {
+        if let Some(rect) = input
+            .backend_node_id
+            .and_then(|backend| by_backend.get(&backend).copied())
+        {
+            visible.insert(input.key.clone(), rect);
+            rect_by_key.insert(input.key.clone(), rect);
+        }
+    }
+
+    let set = super::decide::assemble_candidates(&inputs, &visible, super::decide::MAX_CANDIDATES);
+    let fingerprint = super::decide::fingerprint(&url, &set.candidates, &rect_by_key);
+
+    Ok(ActPage {
+        url,
+        title,
+        candidates: set.candidates,
+        fingerprint,
+        truncated: set.truncated,
+    })
+}
+
+async fn decide_for_page(
+    page: &ActPage,
+    instruction: &str,
+    values: &serde_json::Map<String, Value>,
+    decider: &dyn super::decide::Decider,
+) -> Result<super::decide::Decision, String> {
+    let value_keys: Vec<String> = values.keys().cloned().collect();
+    let input = super::decide::DecisionInput {
+        instruction: instruction.to_string(),
+        url: page.url.clone(),
+        title: page.title.clone(),
+        value_keys,
+        candidates: page.candidates.clone(),
+        truncated: page.truncated,
+    };
+    let ask_value = values.len() > 1;
+    let request = super::decide::DecisionRequest::build(decider.model(), &input, ask_value);
+    super::decide::decide_with_retry(decider, &request)
+        .await
+        .map_err(|error| error.message())
+}
+
+fn act_result(
+    status: &str,
+    decision: &super::decide::Decision,
+    page: &ActPage,
+    value_key: Option<&str>,
+    dry_run: bool,
+    decider: &dyn super::decide::Decider,
+    action_result: Option<Value>,
+) -> Value {
+    json!({
+        "status": status,
+        "operation": decision.operation.as_str(),
+        "target": decision.target,
+        "valueKey": value_key,
+        "confidence": decision.confidence,
+        "probabilities": decision.probabilities,
+        "fingerprint": page.fingerprint,
+        "dryRun": dry_run,
+        "decider": decider.name(),
+        "candidateCount": page.candidates.len(),
+        "candidatesTruncated": page.truncated,
+        "result": action_result,
+    })
+}
+
+async fn run_act_subcommand(cmd: Value, state: &mut DaemonState) -> Result<Value, String> {
+    let response = execute_command(&cmd, state).await;
+    if response.get("success").and_then(Value::as_bool) == Some(true) {
+        Ok(response.get("data").cloned().unwrap_or(Value::Null))
+    } else {
+        Err(response
+            .get("error")
+            .and_then(Value::as_str)
+            .unwrap_or("The chosen action failed.")
+            .to_string())
+    }
+}
+
+/// Choose one operation and target, verify the page has not moved, then run it.
+pub(crate) async fn handle_act(cmd: &Value, state: &mut DaemonState) -> Result<Value, String> {
+    let decider = super::decide::decider_from_env()?;
+    handle_act_with(cmd, state, decider.as_ref()).await
+}
+
+pub(crate) async fn handle_act_with(
+    cmd: &Value,
+    state: &mut DaemonState,
+    decider: &dyn super::decide::Decider,
+) -> Result<Value, String> {
+    let instruction = cmd
+        .get("instruction")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if instruction.is_empty() {
+        return Err("Missing instruction. Usage: act \"<instruction>\"".to_string());
+    }
+
+    let values = cmd
+        .get("values")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
+    let dry_run = cmd.get("dryRun").and_then(Value::as_bool).unwrap_or(false);
+    let min_confidence = cmd.get("minConfidence").and_then(Value::as_f64);
+    if let Some(min) = min_confidence {
+        if !(0.0..=1.0).contains(&min) {
+            return Err("--min-confidence must be between 0 and 1.".to_string());
+        }
+    }
+
+    let mut page = capture_act_page(state).await?;
+    if page.candidates.is_empty() {
+        return Err(
+            "No visible actionable candidates. Run snapshot to refresh refs, then try again."
+                .to_string(),
+        );
+    }
+
+    let mut decision = decide_for_page(&page, &instruction, &values, decider).await?;
+
+    // Fresh-page check: decide once more if the page moved, then give up.
+    let after = capture_act_page(state).await?;
+    if after.fingerprint != page.fingerprint {
+        decision = decide_for_page(&after, &instruction, &values, decider).await?;
+        let final_page = capture_act_page(state).await?;
+        if final_page.fingerprint != after.fingerprint {
+            return Ok(act_result(
+                "stale",
+                &decision,
+                &final_page,
+                None,
+                dry_run,
+                decider,
+                None,
+            ));
+        }
+        page = final_page;
+    } else {
+        page = after;
+    }
+
+    let value_key = decision.value_key.clone();
+    let needs_target = decision.operation.needs_target();
+    let selected = decision.target.clone();
+
+    if decider.calibrated() {
+        if let Some(min) = min_confidence {
+            if decision.confidence < min {
+                return Ok(act_result(
+                    "blocked",
+                    &decision,
+                    &page,
+                    value_key.as_deref(),
+                    dry_run,
+                    decider,
+                    None,
+                ));
+            }
+        }
+    }
+
+    if decision.operation == super::decide::Operation::Done {
+        return Ok(act_result(
+            "done",
+            &decision,
+            &page,
+            value_key.as_deref(),
+            dry_run,
+            decider,
+            None,
+        ));
+    }
+
+    if dry_run {
+        return Ok(act_result(
+            "dry_run",
+            &decision,
+            &page,
+            value_key.as_deref(),
+            true,
+            decider,
+            None,
+        ));
+    }
+
+    let id = cmd
+        .get("id")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let target = if needs_target {
+        let chosen = selected
+            .as_deref()
+            .ok_or("The decider chose an operation without a target.")?;
+        Some(format!("@{}", chosen))
+    } else {
+        None
+    };
+
+    let sub_action = match decision.operation {
+        super::decide::Operation::Click => {
+            json!({ "id": id, "action": "click", "selector": target })
+        }
+        super::decide::Operation::Fill => {
+            let key = value_key
+                .as_deref()
+                .ok_or("The decider chose fill without a supplied value.")?;
+            let value = values
+                .get(key)
+                .and_then(Value::as_str)
+                .ok_or("The chosen value key has no value.")?;
+            json!({ "id": id, "action": "fill", "selector": target, "value": value })
+        }
+        super::decide::Operation::Select => {
+            let key = value_key
+                .as_deref()
+                .ok_or("The decider chose select without a supplied value.")?;
+            let value = values
+                .get(key)
+                .and_then(Value::as_str)
+                .ok_or("The chosen value key has no value.")?;
+            json!({ "id": id, "action": "select", "selector": target, "values": [value] })
+        }
+        super::decide::Operation::ScrollDown => {
+            json!({ "id": id, "action": "scroll", "direction": "down", "amount": 600 })
+        }
+        super::decide::Operation::ScrollUp => {
+            json!({ "id": id, "action": "scroll", "direction": "up", "amount": 600 })
+        }
+        super::decide::Operation::Back => json!({ "id": id, "action": "back" }),
+        super::decide::Operation::Wait => json!({ "id": id, "action": "wait", "timeout": 500 }),
+        super::decide::Operation::Done => unreachable!("done returned before execution"),
+    };
+
+    let action_result = run_act_subcommand(sub_action, state).await?;
+    Ok(act_result(
+        "executed",
+        &decision,
+        &page,
+        value_key.as_deref(),
+        false,
+        decider,
+        Some(action_result),
+    ))
 }
 
 async fn handle_gettext(cmd: &Value, state: &mut DaemonState) -> Result<Value, String> {

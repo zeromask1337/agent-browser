@@ -955,6 +955,51 @@ fn print_primary_response(resp: &Response, action: Option<&str>, opts: &OutputOp
     if let Some(data) = &resp.data {
         print_lifecycle_note(data);
 
+        if action == Some("act") {
+            let status = data.get("status").and_then(|v| v.as_str()).unwrap_or("");
+            let operation = data.get("operation").and_then(|v| v.as_str()).unwrap_or("");
+            let target = data.get("target").and_then(|v| v.as_str()).unwrap_or("");
+            let confidence = data
+                .get("confidence")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            let value_key = data.get("valueKey").and_then(|v| v.as_str()).unwrap_or("");
+            match status {
+                "done" => println!("{} Done: nothing to run", color::success_indicator()),
+                "blocked" => println!(
+                    "{} Blocked at confidence {:.2}: {} {}",
+                    color::warning_indicator(),
+                    confidence,
+                    operation,
+                    target
+                ),
+                "stale" => println!(
+                    "{} Page changed twice; nothing ran",
+                    color::warning_indicator()
+                ),
+                "dry_run" => println!(
+                    "{} Proposal: {} {} (confidence {:.2}, fingerprint {})",
+                    color::success_indicator(),
+                    operation,
+                    target,
+                    confidence,
+                    data.get("fingerprint")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                ),
+                "executed" => {
+                    let mut line =
+                        format!("{} {} {}", color::success_indicator(), operation, target);
+                    if !value_key.is_empty() {
+                        line.push_str(&format!(" (value key {})", value_key));
+                    }
+                    println!("{}", line);
+                }
+                _ => println!("{} Done", color::success_indicator()),
+            }
+            return;
+        }
+
         // Dialog status response
         if action == Some("dialog") {
             if let Some(has_dialog) = data.get("hasDialog").and_then(|v| v.as_bool()) {
@@ -2173,6 +2218,48 @@ Examples:
   agent-browser read https://docs.example.com --llms full --filter auth
   agent-browser read docs.example.com/guide --require-md
   agent-browser read https://api.example.com/docs --headers '{"Authorization":"Bearer token"}'
+"##
+        }
+
+        // === Core Actions ===
+        "act" => {
+            r##"
+agent-browser act - Choose and run one action from an instruction
+
+Usage: agent-browser act "<instruction>" [--dry-run] [--min-confidence <0..1>] [--value <key>=<value>]...
+
+Asks a decider to pick one operation and one visible target from the current
+snapshot, then runs it. Run snapshot first so refs exist, and snapshot again
+after the page changes. The operation set is click, fill, select, scroll_down,
+scroll_up, back, wait, and done.
+
+The decider only sees the instruction, the page URL and title, candidate role
+and accessible name, and caller-supplied value key names. It never sees input
+values, passwords, cookies, storage, or auth vault entries. A chosen ref is
+re-validated against the page before it runs; if the page moved twice, act
+returns status stale and runs nothing.
+
+Options:
+  --dry-run              Return the proposal without running it
+  --min-confidence <n>   Block below confidence n (0..1). Applies to jev only:
+                         the llm decider reports probabilities of 0 or 1.
+  --value <key>=<value>  Caller-supplied value. Repeatable. jev chooses which
+                         key goes where; it never sees the value itself.
+
+Environment:
+  AGENT_BROWSER_DECIDER=jev|llm  Required. jev is calibrated; llm is the eval baseline
+  TYPESAFE_API_KEY               API key for jev
+  TYPESAFE_MODEL                 Model for jev (default: jev-latest)
+  TYPESAFE_BASE_URL              TypeSafe API base URL (default: https://api.typesafe.ai)
+  AGENT_BROWSER_DECIDER_MODEL    Model for the llm decider (default: anthropic/claude-sonnet-4.6)
+
+Examples:
+  agent-browser snapshot -i
+  agent-browser act "Click the Sign in button"
+  agent-browser act "Fill the email field" --value email=me@example.com
+  agent-browser act "Search for running shoes" --value query="running shoes"
+  agent-browser act "Click Submit" --dry-run
+  agent-browser act "Click Submit" --min-confidence 0.8
 "##
         }
 
@@ -4407,6 +4494,7 @@ Core Commands:
   scroll <dir> [px]          Scroll (up/down/left/right)
   scrollintoview <sel>       Scroll element into view
   wait <sel|ms>              Wait for element or time
+  act "<instruction>"        Pick and run one action with a decider
   screenshot [path]          Take screenshot
   pdf <path>                 Save as PDF
   snapshot                   Accessibility tree with refs (for AI)
@@ -4801,6 +4889,11 @@ Environment:
   AI_GATEWAY_URL                 Vercel AI Gateway base URL (default: https://ai-gateway.vercel.sh)
   AI_GATEWAY_API_KEY             API key for the AI Gateway (enables chat command and dashboard AI chat)
   AI_GATEWAY_MODEL               Default AI model (default: anthropic/claude-sonnet-4.6, or --model flag)
+  AGENT_BROWSER_DECIDER          Decider for act: jev or llm (required by act)
+  AGENT_BROWSER_DECIDER_MODEL    Model for the llm decider (default: anthropic/claude-sonnet-4.6)
+  TYPESAFE_API_KEY               API key for jev (required when AGENT_BROWSER_DECIDER=jev)
+  TYPESAFE_MODEL                 Model for jev (default: jev-latest)
+  TYPESAFE_BASE_URL              TypeSafe API base URL (default: https://api.typesafe.ai)
 
 Install:
   npm install -g agent-browser           # npm

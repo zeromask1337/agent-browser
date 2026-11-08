@@ -382,6 +382,22 @@ fn collect_tagged_rects(node: &Value, rects: &[Value], out: &mut HashMap<i64, Re
     }
 }
 
+/// Convert the current ref map into candidate inputs in ref order.
+pub fn candidate_inputs(ref_map: &super::element::RefMap) -> Vec<CandidateInput> {
+    ref_map
+        .entries_sorted()
+        .into_iter()
+        .map(|(key, entry)| CandidateInput {
+            key,
+            role: entry.role,
+            name: entry.name,
+            nth: entry.nth,
+            backend_node_id: entry.backend_node_id,
+            frame_id: entry.frame_id,
+        })
+        .collect()
+}
+
 /// Everything a decider may see about the current request.
 #[derive(Clone, Debug)]
 pub struct DecisionInput {

@@ -16468,3 +16468,123 @@ async fn e2e_flow_keeps_vault_and_key_by_key_passwords_out_of_flows() {
     .await;
     let _ = exec(&run(&mut n, json!({ "action": "close" })), &mut state).await;
 }
+
+struct ClickNamedDecider {
+    name_fragment: String,
+}
+
+#[async_trait::async_trait]
+impl super::decide::Decider for ClickNamedDecider {
+    fn name(&self) -> &'static str {
+        "stub"
+    }
+
+    fn model(&self) -> &str {
+        "stub"
+    }
+
+    async fn decide(
+        &self,
+        request: &super::decide::DecisionRequest,
+    ) -> Result<super::decide::DeciderResponse, super::decide::DecideError> {
+        let criteria = request.questions["target"]["criteria"]
+            .as_object()
+            .ok_or(super::decide::DecideError::Protocol)?;
+        let target = criteria
+            .iter()
+            .find(|(_, description)| {
+                description
+                    .as_str()
+                    .is_some_and(|text| text.contains(&self.name_fragment))
+            })
+            .map(|(key, _)| key.clone())
+            .ok_or(super::decide::DecideError::Protocol)?;
+
+        let operation_keys = request.questions["operation"]["criteria"]
+            .as_object()
+            .ok_or(super::decide::DecideError::Protocol)?;
+        let mut operation_probabilities = serde_json::Map::new();
+        for key in operation_keys.keys() {
+            operation_probabilities
+                .insert(key.clone(), json!(if key == "click" { 1.0 } else { 0.0 }));
+        }
+        let mut target_probabilities = serde_json::Map::new();
+        for key in criteria.keys() {
+            target_probabilities.insert(key.clone(), json!(if key == &target { 1.0 } else { 0.0 }));
+        }
+
+        Ok(super::decide::DeciderResponse {
+            answers: json!({
+                "operation": {
+                    "type": "choice",
+                    "choice": "click",
+                    "confidence": 1.0,
+                    "probabilities": operation_probabilities,
+                },
+                "target": {
+                    "type": "choice",
+                    "choice": target,
+                    "confidence": 1.0,
+                    "probabilities": target_probabilities,
+                }
+            }),
+            input_tokens: None,
+            output_tokens: None,
+        })
+    }
+}
+
+#[tokio::test]
+#[ignore]
+async fn e2e_act_with_stub_decider_clicks_offered_ref() {
+    let html = r#"<!doctype html><html><body>
+<button id="no">Cancel</button>
+<button id="go" onclick="window.__clicked = this.id">Submit order</button>
+<script>window.__clicked = null;</script>
+</body></html>"#;
+    let url = format!("data:text/html;base64,{}", STANDARD.encode(html));
+    let mut state = DaemonState::new();
+
+    assert_success(
+        &execute_command(
+            &json!({ "id": "1", "action": "launch", "headless": true }),
+            &mut state,
+        )
+        .await,
+    );
+    assert_success(
+        &execute_command(
+            &json!({ "id": "2", "action": "navigate", "url": url }),
+            &mut state,
+        )
+        .await,
+    );
+    assert_success(
+        &execute_command(
+            &json!({ "id": "3", "action": "snapshot", "interactive": true }),
+            &mut state,
+        )
+        .await,
+    );
+
+    let decider = ClickNamedDecider {
+        name_fragment: "Submit order".to_string(),
+    };
+    let data = super::actions::handle_act_with(
+        &json!({ "id": "4", "action": "act", "instruction": "Click Submit order" }),
+        &mut state,
+        &decider,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(data["status"], "executed");
+    assert_eq!(data["operation"], "click");
+    assert!(data["target"]
+        .as_str()
+        .is_some_and(|target| target.starts_with('e')));
+
+    assert_evaluate(&mut state, "5", "window.__clicked", json!("go")).await;
+
+    let _ = execute_command(&json!({ "id": "6", "action": "close" }), &mut state).await;
+}
