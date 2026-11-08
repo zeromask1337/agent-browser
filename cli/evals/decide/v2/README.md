@@ -8,7 +8,7 @@ This directory holds a fresh decision eval set built for the first Jev gate run.
 - `fixtures/`: one HTML page per archetype.
 - `generate.mjs`: deterministic generator for both files.
 - `manifest.json`: seed, counts, and generation notes.
-- `RESULTS.md`: written after the single live run.
+- `RESULTS.md`: the single live run, its metrics, and every failure.
 
 ## Label source and freeze policy
 
