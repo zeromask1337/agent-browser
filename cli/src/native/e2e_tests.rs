@@ -16589,6 +16589,83 @@ async fn e2e_act_with_stub_decider_clicks_offered_ref() {
     let _ = execute_command(&json!({ "id": "6", "action": "close" }), &mut state).await;
 }
 
+#[tokio::test]
+#[ignore]
+async fn e2e_act_candidates_skip_disabled_controls_and_mark_click_roles() {
+    let html = r#"<!doctype html><html><body>
+<button>Send</button>
+<button disabled>Publish report</button>
+<div role="button" aria-disabled="true" tabindex="0">Archive</div>
+<fieldset disabled><button>Save draft</button></fieldset>
+<input aria-label="Email">
+<select aria-label="Country"><option>Germany</option></select>
+</body></html>"#;
+    let url = format!("data:text/html;base64,{}", STANDARD.encode(html));
+    let mut state = DaemonState::new();
+
+    assert_success(
+        &execute_command(
+            &json!({ "id": "1", "action": "launch", "headless": true }),
+            &mut state,
+        )
+        .await,
+    );
+    assert_success(
+        &execute_command(
+            &json!({ "id": "2", "action": "navigate", "url": url }),
+            &mut state,
+        )
+        .await,
+    );
+    assert_success(
+        &execute_command(
+            &json!({ "id": "3", "action": "snapshot", "interactive": true }),
+            &mut state,
+        )
+        .await,
+    );
+
+    let page = super::actions::capture_act_page(&state).await.unwrap();
+    let names: Vec<&str> = page
+        .candidates
+        .iter()
+        .map(|candidate| candidate.name.as_str())
+        .collect();
+    assert!(
+        !names.contains(&"Publish report"),
+        "disabled attribute must be filtered: {:?}",
+        names
+    );
+    assert!(
+        !names.contains(&"Archive"),
+        "aria-disabled must be filtered: {:?}",
+        names
+    );
+    assert!(
+        !names.contains(&"Save draft"),
+        "disabled fieldset ancestor must be filtered: {:?}",
+        names
+    );
+
+    let by_name = |name: &str| {
+        page.candidates
+            .iter()
+            .find(|candidate| candidate.name == name)
+            .unwrap_or_else(|| panic!("{} must be offered: {:?}", name, names))
+    };
+    assert!(by_name("Send").activates, "a button activates on click");
+    assert!(
+        !by_name("Email").activates,
+        "a textbox is not a click target"
+    );
+    assert!(
+        !by_name("Country").activates,
+        "a select is not a click target"
+    );
+
+    let _ = execute_command(&json!({ "id": "4", "action": "close" }), &mut state).await;
+}
+
 #[derive(serde::Deserialize)]
 struct EvalFile {
     cases: Vec<EvalCase>,

@@ -417,7 +417,12 @@ pub async fn probe_rendered_elements(
         // :disabled covers the attribute and a disabled fieldset ancestor.
         // ARIA allows a custom control to be disabled without the attribute.
         var disabled = false;
-        try { disabled = el.matches(':disabled'); } catch (e) {}
+        try {
+            disabled = el.matches(':disabled') ||
+                (el.hasAttribute && el.hasAttribute('disabled'));
+        } catch (e) {
+            disabled = !!(el.hasAttribute && el.hasAttribute('disabled'));
+        }
         if (!disabled && el.getAttribute) {
             var aria = el.getAttribute('aria-disabled');
             disabled = aria !== null && aria.toLowerCase() === 'true';
