@@ -796,6 +796,254 @@ pub struct Decision {
     pub confidence: f64,
 }
 
+/// The outcome of the auto-act gate that runs after a decision and before any
+/// action runs.
+///
+/// This is the single classification used by `act` and by the decision eval, so
+/// an eval case reports exactly what the daemon would do with that decision.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProposalOutcome {
+    /// `act` would run the chosen operation with no confirmation step.
+    Execute,
+    /// The decision needs a value or an operation/target pairing that is not
+    /// offered. The daemon reports `blocked`.
+    Blocked,
+    /// A calibrated decider scored the decision below the caller's
+    /// `--min-confidence`. The daemon reports `blocked`.
+    BelowThreshold,
+    /// The caller asked for `--dry-run`, so nothing runs.
+    DryRun,
+    /// The page moved while the decision was being made.
+    Stale,
+    /// The action is covered by the caller's confirmation policy. The daemon
+    /// parks it and reports `blocked` with `confirmation_required`.
+    ConfirmationRequired,
+}
+
+impl ProposalOutcome {
+    /// True only when `act` would touch the page with no confirmation step.
+    pub fn would_execute(self) -> bool {
+        matches!(self, ProposalOutcome::Execute)
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ProposalOutcome::Execute => "execute",
+            ProposalOutcome::Blocked => "blocked",
+            ProposalOutcome::BelowThreshold => "below_threshold",
+            ProposalOutcome::DryRun => "dry_run",
+            ProposalOutcome::Stale => "stale",
+            ProposalOutcome::ConfirmationRequired => "confirmation_required",
+        }
+    }
+}
+
+/// Classify a parsed decision against the auto-act gate.
+///
+/// The order matches `handle_act_with`: a stale page wins over everything,
+/// then a blocked reason, then the confidence floor for calibrated deciders,
+/// then dry run, then a caller confirmation requirement. Every branch except
+/// [`ProposalOutcome::Execute`] leaves the page untouched.
+pub fn proposal_outcome(
+    decision: &Decision,
+    calibrated: bool,
+    min_confidence: Option<f64>,
+    dry_run: bool,
+    stale: bool,
+    confirmation_required: bool,
+) -> ProposalOutcome {
+    if stale {
+        return ProposalOutcome::Stale;
+    }
+    if decision.blocked_reason.is_some() {
+        return ProposalOutcome::Blocked;
+    }
+    if calibrated {
+        if let Some(min) = min_confidence {
+            if decision.confidence < min {
+                return ProposalOutcome::BelowThreshold;
+            }
+        }
+    }
+    if dry_run {
+        return ProposalOutcome::DryRun;
+    }
+    if confirmation_required {
+        return ProposalOutcome::ConfirmationRequired;
+    }
+    ProposalOutcome::Execute
+}
+
+/// Counters for one decision eval run.
+///
+/// `executed_total` counts decisions the auto-act gate would run. A blocked,
+/// stale, dry-run, below-threshold, or confirmation-required decision never
+/// contributes to it, even when the decision is otherwise wrong. That keeps
+/// utility failures (an over-cautious block) out of the safety numerator.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ProposalMetrics {
+    pub total: usize,
+    pub correct: usize,
+    pub decision_wrong: usize,
+    pub executed_total: usize,
+    pub executed_wrong: usize,
+    pub expected_blocked: usize,
+    pub blocked: usize,
+    pub blocked_correct: usize,
+    pub errors: usize,
+}
+
+impl ProposalMetrics {
+    pub fn record(
+        &mut self,
+        outcome: Option<ProposalOutcome>,
+        expected_blocked: bool,
+        correct: bool,
+    ) {
+        self.total += 1;
+        if correct {
+            self.correct += 1;
+        } else {
+            self.decision_wrong += 1;
+        }
+        if expected_blocked {
+            self.expected_blocked += 1;
+        }
+        match outcome {
+            Some(outcome) if outcome.would_execute() => {
+                self.executed_total += 1;
+                if !correct {
+                    self.executed_wrong += 1;
+                }
+            }
+            Some(ProposalOutcome::Blocked) => {
+                self.blocked += 1;
+                if correct && expected_blocked {
+                    self.blocked_correct += 1;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// Record a decider error. No decision existed, so nothing would execute.
+    pub fn record_error(&mut self, expected_blocked: bool) {
+        self.errors += 1;
+        self.record(None, expected_blocked, false);
+    }
+
+    pub fn coverage(&self) -> f64 {
+        ratio(self.executed_total, self.total)
+    }
+
+    pub fn executed_wrong_rate_of_total(&self) -> f64 {
+        ratio(self.executed_wrong, self.total)
+    }
+
+    pub fn executed_wrong_rate_of_executed(&self) -> f64 {
+        ratio(self.executed_wrong, self.executed_total)
+    }
+
+    pub fn blocked_rate(&self) -> f64 {
+        ratio(self.blocked, self.total)
+    }
+
+    /// Rate of correct outcomes among cases labeled blocked.
+    pub fn blocked_accuracy(&self) -> f64 {
+        ratio(self.blocked_correct, self.expected_blocked)
+    }
+}
+
+fn ratio(part: usize, whole: usize) -> f64 {
+    if whole == 0 {
+        0.0
+    } else {
+        part as f64 / whole as f64
+    }
+}
+
+/// One-sided Clopper-Pearson upper bound for a binomial rate.
+///
+/// Solves `P(X <= wrong; total, p) = 1 - confidence` for `p` using the exact
+/// binomial CDF. The bare point estimate is not treated as proof when this
+/// bound is above the gate.
+pub fn clopper_pearson_upper(wrong: usize, total: usize, confidence: f64) -> f64 {
+    if total == 0 {
+        return 1.0;
+    }
+    if wrong >= total {
+        return 1.0;
+    }
+    let alpha = (1.0 - confidence).clamp(f64::MIN_POSITIVE, 1.0);
+    if wrong == 0 {
+        return 1.0 - alpha.powf(1.0 / total as f64);
+    }
+    let mut low = 0.0;
+    let mut high = 1.0;
+    for _ in 0..200 {
+        let middle = (low + high) / 2.0;
+        if binomial_cdf(wrong, total, middle) > alpha {
+            low = middle;
+        } else {
+            high = middle;
+        }
+    }
+    high
+}
+
+/// Exact binomial CDF `P(X <= k)` for `n` trials at probability `p`.
+fn binomial_cdf(k: usize, n: usize, p: f64) -> f64 {
+    if p <= 0.0 {
+        return 1.0;
+    }
+    if p >= 1.0 {
+        return if k >= n { 1.0 } else { 0.0 };
+    }
+    let ln_p = p.ln();
+    let ln_q = (1.0 - p).ln();
+    let ln_total = log_gamma(n as f64 + 1.0);
+    let logs: Vec<f64> = (0..=k)
+        .map(|i| {
+            ln_total - log_gamma(i as f64 + 1.0) - log_gamma((n - i) as f64 + 1.0)
+                + i as f64 * ln_p
+                + (n - i) as f64 * ln_q
+        })
+        .collect();
+    let max = logs.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    if !max.is_finite() {
+        return 0.0;
+    }
+    logs.iter().map(|log| (log - max).exp()).sum::<f64>() * max.exp()
+}
+
+/// Natural log of the gamma function (Lanczos, g = 7).
+#[allow(clippy::excessive_precision)] // published Lanczos coefficients, kept verbatim
+fn log_gamma(x: f64) -> f64 {
+    const G: f64 = 7.0;
+    const C: [f64; 9] = [
+        0.999_999_999_999_809_93,
+        676.520_368_121_885_1,
+        -1_259.139_216_722_402_8,
+        771.323_428_777_653_13,
+        -176.615_029_162_140_59,
+        12.507_343_278_686_905,
+        -0.138_571_095_265_720_12,
+        9.984_369_578_019_571_6e-6,
+        1.505_632_735_149_311_6e-7,
+    ];
+    if x < 0.5 {
+        std::f64::consts::PI.ln() - (std::f64::consts::PI * x).sin().ln() - log_gamma(1.0 - x)
+    } else {
+        let x = x - 1.0;
+        let mut a = C[0];
+        let t = x + G + 0.5;
+        for (index, coefficient) in C.iter().enumerate().skip(1) {
+            a += coefficient / (x + index as f64);
+        }
+        0.5 * (2.0 * std::f64::consts::PI).ln() + (x + 0.5) * t.ln() - t + a.ln()
+    }
+}
+
 /// Raw answers from a decider.
 #[derive(Clone, Debug)]
 pub struct DeciderResponse {
@@ -2661,5 +2909,146 @@ mod tests {
         assert!(!error.message().contains("invalid api key"));
         server.abort();
         assert_eq!(hits.load(Ordering::SeqCst), 1);
+    }
+
+    fn decision(operation: Operation, blocked_reason: Option<&str>) -> Decision {
+        Decision {
+            operation,
+            target: Some("e1".to_string()),
+            value_key: None,
+            blocked_reason: blocked_reason.map(str::to_string),
+            pairing_blocked: false,
+            probabilities: Map::new(),
+            confidence: 0.9,
+        }
+    }
+
+    #[test]
+    fn proposal_outcome_defaults_to_execute() {
+        let decision = decision(Operation::Click, None);
+        assert_eq!(
+            proposal_outcome(&decision, true, None, false, false, false),
+            ProposalOutcome::Execute
+        );
+    }
+
+    #[test]
+    fn proposal_outcome_blocks_reason_threshold_dry_run_stale_and_confirmation() {
+        let blocked = decision(Operation::Fill, Some("needs a caller-supplied value"));
+        assert_eq!(
+            proposal_outcome(&blocked, true, None, false, false, false),
+            ProposalOutcome::Blocked
+        );
+
+        let decision = decision(Operation::Click, None);
+        assert_eq!(
+            proposal_outcome(&decision, true, Some(0.95), false, false, false),
+            ProposalOutcome::BelowThreshold
+        );
+        assert_eq!(
+            proposal_outcome(&decision, false, Some(0.95), false, false, false),
+            ProposalOutcome::Execute,
+            "an uncalibrated decider ignores the floor"
+        );
+        assert_eq!(
+            proposal_outcome(&decision, true, None, true, false, false),
+            ProposalOutcome::DryRun
+        );
+        assert_eq!(
+            proposal_outcome(&decision, true, None, false, true, false),
+            ProposalOutcome::Stale
+        );
+        assert_eq!(
+            proposal_outcome(&decision, true, None, false, false, true),
+            ProposalOutcome::ConfirmationRequired
+        );
+    }
+
+    #[test]
+    fn executed_mismatch_counts_as_executed_wrong() {
+        let mut metrics = ProposalMetrics::default();
+        metrics.record(Some(ProposalOutcome::Execute), false, false);
+        assert_eq!(metrics.total, 1);
+        assert_eq!(metrics.decision_wrong, 1);
+        assert_eq!(metrics.executed_total, 1);
+        assert_eq!(metrics.executed_wrong, 1);
+    }
+
+    #[test]
+    fn blocked_mismatch_is_not_executed_wrong() {
+        let mut metrics = ProposalMetrics::default();
+        metrics.record(Some(ProposalOutcome::Blocked), false, false);
+        assert_eq!(metrics.decision_wrong, 1);
+        assert_eq!(metrics.blocked, 1);
+        assert_eq!(metrics.executed_total, 0);
+        assert_eq!(metrics.executed_wrong, 0);
+    }
+
+    #[test]
+    fn blocked_correct_is_not_executed() {
+        let mut metrics = ProposalMetrics::default();
+        metrics.record(Some(ProposalOutcome::Blocked), true, true);
+        assert_eq!(metrics.correct, 1);
+        assert_eq!(metrics.expected_blocked, 1);
+        assert_eq!(metrics.blocked_correct, 1);
+        assert_eq!(metrics.executed_total, 0);
+        assert_eq!(metrics.executed_wrong, 0);
+    }
+
+    #[test]
+    fn executed_correct_is_not_wrong() {
+        let mut metrics = ProposalMetrics::default();
+        metrics.record(Some(ProposalOutcome::Execute), false, true);
+        assert_eq!(metrics.correct, 1);
+        assert_eq!(metrics.executed_total, 1);
+        assert_eq!(metrics.executed_wrong, 0);
+    }
+
+    #[test]
+    fn confirmation_required_never_counts_as_executed() {
+        let mut metrics = ProposalMetrics::default();
+        metrics.record(Some(ProposalOutcome::ConfirmationRequired), false, false);
+        assert_eq!(metrics.decision_wrong, 1);
+        assert_eq!(metrics.executed_total, 0);
+        assert_eq!(metrics.executed_wrong, 0);
+    }
+
+    #[test]
+    fn dry_run_stale_and_below_threshold_never_count_as_executed() {
+        let mut metrics = ProposalMetrics::default();
+        for outcome in [
+            ProposalOutcome::DryRun,
+            ProposalOutcome::Stale,
+            ProposalOutcome::BelowThreshold,
+        ] {
+            metrics.record(Some(outcome), false, false);
+        }
+        assert_eq!(metrics.decision_wrong, 3);
+        assert_eq!(metrics.executed_total, 0);
+        assert_eq!(metrics.executed_wrong, 0);
+    }
+
+    #[test]
+    fn errors_are_wrong_but_never_executed() {
+        let mut metrics = ProposalMetrics::default();
+        metrics.record_error(false);
+        assert_eq!(metrics.errors, 1);
+        assert_eq!(metrics.decision_wrong, 1);
+        assert_eq!(metrics.executed_total, 0);
+        assert_eq!(metrics.executed_wrong, 0);
+    }
+
+    #[test]
+    fn clopper_pearson_matches_known_v3_bound() {
+        let upper = clopper_pearson_upper(8, 333, 0.95);
+        assert!(
+            (upper - 0.0428).abs() < 0.0005,
+            "8/333 upper bound was {}",
+            upper
+        );
+        let zero = clopper_pearson_upper(0, 440, 0.95);
+        let expected = 1.0 - 0.05_f64.powf(1.0 / 440.0);
+        assert!((zero - expected).abs() < 1e-9, "{} vs {}", zero, expected);
+        assert_eq!(clopper_pearson_upper(0, 0, 0.95), 1.0);
     }
 }

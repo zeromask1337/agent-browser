@@ -7716,46 +7716,57 @@ pub(crate) async fn handle_act_with(
     let needs_target = decision.operation.needs_target();
     let selected = decision.target.clone();
 
-    if let Some(reason) = decision.blocked_reason.as_deref() {
-        let mut result = act_result(
-            "blocked",
-            &decision,
-            &page,
-            value_key.as_deref(),
-            dry_run,
-            decider,
-            None,
-        );
-        result["reason"] = json!(reason);
-        return Ok(result);
-    }
-
-    if decider.calibrated() {
-        if let Some(min) = min_confidence {
-            if decision.confidence < min {
-                return Ok(act_result(
-                    "blocked",
-                    &decision,
-                    &page,
-                    value_key.as_deref(),
-                    dry_run,
-                    decider,
-                    None,
-                ));
+    let outcome = super::decide::proposal_outcome(
+        &decision,
+        decider.calibrated(),
+        min_confidence,
+        dry_run,
+        false,
+        false,
+    );
+    match outcome {
+        super::decide::ProposalOutcome::Execute => {}
+        super::decide::ProposalOutcome::Blocked => {
+            let mut result = act_result(
+                "blocked",
+                &decision,
+                &page,
+                value_key.as_deref(),
+                dry_run,
+                decider,
+                None,
+            );
+            if let Some(reason) = decision.blocked_reason.as_deref() {
+                result["reason"] = json!(reason);
             }
+            return Ok(result);
         }
-    }
-
-    if dry_run {
-        return Ok(act_result(
-            "dry_run",
-            &decision,
-            &page,
-            value_key.as_deref(),
-            true,
-            decider,
-            None,
-        ));
+        super::decide::ProposalOutcome::BelowThreshold => {
+            return Ok(act_result(
+                "blocked",
+                &decision,
+                &page,
+                value_key.as_deref(),
+                dry_run,
+                decider,
+                None,
+            ));
+        }
+        super::decide::ProposalOutcome::DryRun => {
+            return Ok(act_result(
+                "dry_run",
+                &decision,
+                &page,
+                value_key.as_deref(),
+                true,
+                decider,
+                None,
+            ));
+        }
+        super::decide::ProposalOutcome::Stale
+        | super::decide::ProposalOutcome::ConfirmationRequired => {
+            unreachable!("stale is handled above and confirmation is learned after execution")
+        }
     }
 
     let id = cmd

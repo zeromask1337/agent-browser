@@ -16688,6 +16688,20 @@ struct EvalExpect {
     /// When true, the decision must also be blocked for lack of a value.
     #[serde(default)]
     blocked: bool,
+    /// Labels a case whose action a caller policy would confirm. The runner
+    /// does not execute proposals, so a labeled destructive case is classified
+    /// `confirmation_required` and never counted as would-execute. The frozen
+    /// eval fixtures are non-destructive, so this label is normally absent.
+    #[serde(default)]
+    destructive: bool,
+}
+
+#[derive(Default)]
+struct EvalOpTally {
+    total: usize,
+    correct: usize,
+    executed_total: usize,
+    executed_wrong: usize,
 }
 
 /// Cases file for the decision eval. `AGENT_BROWSER_DECIDE_CASES` overrides
@@ -16797,26 +16811,20 @@ async fn e2e_decide_eval() {
         .await,
     );
 
-    let mut correct = 0usize;
-    let mut wrong_actions = 0usize;
-    let mut errors = 0usize;
-    let mut blocked_total = 0usize;
-    let mut blocked_correct = 0usize;
-    let mut by_operation: std::collections::BTreeMap<String, (usize, usize)> =
+    let mut metrics = super::decide::ProposalMetrics::default();
+    let mut by_operation: std::collections::BTreeMap<String, EvalOpTally> =
         std::collections::BTreeMap::new();
     let mut latencies: Vec<f64> = Vec::new();
     let mut calls = 0u64;
     let mut rows: Vec<String> = Vec::new();
     let mut misses: Vec<String> = Vec::new();
+    let mut executed_misses: Vec<String> = Vec::new();
 
     for (index, case) in file.cases.iter().enumerate() {
-        if case.expect.blocked {
-            blocked_total += 1;
-        }
         by_operation
             .entry(case.expect.operation.clone())
             .or_default()
-            .0 += 1;
+            .total += 1;
         let fixture_path = eval_fixture_path(&path, &case.fixture);
         let html = std::fs::read_to_string(&fixture_path).unwrap_or_else(|error| {
             panic!("cannot read fixture {}: {}", fixture_path.display(), error)
@@ -16828,10 +16836,9 @@ async fn e2e_decide_eval() {
         )
         .await;
         if !nav.get("success").and_then(Value::as_bool).unwrap_or(false) {
-            errors += 1;
-            wrong_actions += 1;
+            metrics.record_error(case.expect.blocked);
             rows.push(format!(
-                "{} | {} | navigation failed | - | - | FAIL",
+                "{} | {} | navigation failed | - | - | error | FAIL",
                 case.name, case.expect.operation
             ));
             continue;
@@ -16878,17 +16885,31 @@ async fn e2e_decide_eval() {
                 };
                 let blocked_ok = !case.expect.blocked || decision.blocked_reason.is_some();
                 let ok = operation_ok && target_ok && blocked_ok;
+                // The runner does not execute proposals. It classifies them with
+                // the same gate `handle_act_with` uses, with dry-run and a moved
+                // page off, and the confidence floor at the act default of none.
+                let outcome = super::decide::proposal_outcome(
+                    &decision,
+                    counting.calibrated(),
+                    None,
+                    false,
+                    false,
+                    case.expect.destructive,
+                );
+                metrics.record(Some(outcome), case.expect.blocked, ok);
+                let tally = by_operation
+                    .entry(case.expect.operation.clone())
+                    .or_default();
                 if ok {
-                    correct += 1;
-                    by_operation
-                        .entry(case.expect.operation.clone())
-                        .or_default()
-                        .1 += 1;
-                    if case.expect.blocked {
-                        blocked_correct += 1;
+                    tally.correct += 1;
+                }
+                if outcome.would_execute() {
+                    tally.executed_total += 1;
+                    if !ok {
+                        tally.executed_wrong += 1;
                     }
-                } else {
-                    wrong_actions += 1;
+                }
+                if !ok {
                     let offered = page
                         .candidates
                         .iter()
@@ -16906,8 +16927,8 @@ async fn e2e_decide_eval() {
                         })
                         .collect::<Vec<_>>()
                         .join(", ");
-                    misses.push(format!(
-                        "MISS {}: instruction {:?}; expected {} target {:?}{}; got {} target {:?}{}; blocked_reason {:?}; candidates [{}]",
+                    let miss = format!(
+                        "MISS {}: instruction {:?}; expected {} target {:?}{}; got {} target {:?}{}; outcome {}; blocked_reason {:?}; candidates [{}]",
                         case.name,
                         case.instruction,
                         case.expect.operation,
@@ -16920,22 +16941,34 @@ async fn e2e_decide_eval() {
                             .as_deref()
                             .map(|key| format!(" ({})", key))
                             .unwrap_or_default(),
+                        outcome.as_str(),
                         decision.blocked_reason,
                         offered
-                    ));
+                    );
+                    misses.push(miss.clone());
+                    if outcome.would_execute() {
+                        executed_misses.push(miss);
+                    }
                 }
                 rows.push(format!(
-                    "{} | {} | {}{} | {} | {:.0} | {}",
+                    "{} | {} | {}{} | {} | {} | {:.0} | {}",
                     case.name,
                     case.expect.operation,
                     decision.operation.as_str(),
                     if operation_ok { "" } else { " (wrong op)" },
                     target_name.unwrap_or_else(|| "-".to_string()),
+                    outcome.as_str(),
                     elapsed_ms,
                     if ok { "ok" } else { "FAIL" }
                 ));
                 if case.expect.blocked && !blocked_ok {
                     rows.last_mut().unwrap().push_str(" [not blocked]");
+                }
+                if outcome.would_execute() && !ok {
+                    rows.last_mut().unwrap().push_str(" [EXECUTED-WRONG]");
+                }
+                if case.expect.destructive {
+                    rows.last_mut().unwrap().push_str(" [destructive label]");
                 }
                 if input_tokens > 0 {
                     rows.last_mut()
@@ -16944,10 +16977,9 @@ async fn e2e_decide_eval() {
                 }
             }
             Err(error) => {
-                errors += 1;
-                wrong_actions += 1;
+                metrics.record_error(case.expect.blocked);
                 rows.push(format!(
-                    "{} | {} | error: {} | - | {:.0} | FAIL",
+                    "{} | {} | error: {} | - | error | {:.0} | FAIL",
                     case.name,
                     case.expect.operation,
                     error.message(),
@@ -16963,26 +16995,46 @@ async fn e2e_decide_eval() {
     )
     .await;
 
-    let total = file.cases.len();
+    let total = metrics.total;
     let mut sorted = latencies.clone();
     sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    let accuracy = if total == 0 {
-        0.0
-    } else {
-        correct as f64 / total as f64 * 100.0
-    };
+    let p50 = eval_percentile(&sorted, 0.50);
+    let p95 = eval_percentile(&sorted, 0.95);
+    let max = sorted.last().copied().unwrap_or(0.0);
     let total_input = counting
         .input_tokens
         .load(std::sync::atomic::Ordering::SeqCst);
     let total_output = counting
         .output_tokens
         .load(std::sync::atomic::Ordering::SeqCst);
+    let cp_total =
+        super::decide::clopper_pearson_upper(metrics.executed_wrong, metrics.total, 0.95);
+    let cp_executed = if metrics.executed_total > 0 {
+        super::decide::clopper_pearson_upper(metrics.executed_wrong, metrics.executed_total, 0.95)
+    } else {
+        1.0
+    };
+    let destructive = file
+        .cases
+        .iter()
+        .filter(|case| case.expect.destructive)
+        .count();
+    let gate_of_total = metrics.executed_wrong_rate_of_total() < 0.01;
+    let gate_of_executed =
+        metrics.executed_total > 0 && metrics.executed_wrong_rate_of_executed() < 0.01;
+    let gate_coverage = metrics.coverage() >= 0.90;
+    let gate_decision = total > 0 && (metrics.decision_wrong as f64) / (total as f64) < 0.01;
+    let gate_p50 = p50 < 1000.0;
 
     println!("\ndecider: {} ({})", counting.name(), counting.model());
     println!("cases: {}", total);
     println!(
-        "{:<34} | {:<12} | {:<20} | {:<28} | {:>6} | result",
-        "case", "expected", "got", "target", "ms"
+        "min confidence: none (act default); destructive labels: {}",
+        destructive
+    );
+    println!(
+        "{:<40} | {:<12} | {:<18} | {:<26} | {:<20} | {:>6} | result",
+        "case", "expected", "got", "target", "outcome", "ms"
     );
     for row in &rows {
         println!("{}", row);
@@ -16990,35 +17042,69 @@ async fn e2e_decide_eval() {
     for miss in &misses {
         println!("\n{}", miss);
     }
-    println!("\ntop-1 accuracy: {:.1}% ({}/{})", accuracy, correct, total);
+    if !executed_misses.is_empty() {
+        println!(
+            "\nEXECUTED-WRONG failures ({} of {} executed):",
+            executed_misses.len(),
+            metrics.executed_total
+        );
+        for miss in &executed_misses {
+            println!("{}", miss);
+        }
+    }
     println!(
-        "wrong actions: {} ({:.1}%), errors: {}",
-        wrong_actions,
+        "\ndecision: correct {} ({:.1}%), wrong {} ({:.1}%), errors {}",
+        metrics.correct,
         if total == 0 {
             0.0
         } else {
-            wrong_actions as f64 / total as f64 * 100.0
+            metrics.correct as f64 / total as f64 * 100.0
         },
-        errors
+        metrics.decision_wrong,
+        if total == 0 {
+            0.0
+        } else {
+            metrics.decision_wrong as f64 / total as f64 * 100.0
+        },
+        metrics.errors
     );
-    if blocked_total > 0 {
-        println!(
-            "blocked cases: {}/{} correct",
-            blocked_correct, blocked_total
-        );
-    }
+    println!(
+        "would execute: {} of {} cases; executed wrong: {} ({:.2}% of total, {:.2}% of executed)",
+        metrics.executed_total,
+        total,
+        metrics.executed_wrong,
+        metrics.executed_wrong_rate_of_total() * 100.0,
+        metrics.executed_wrong_rate_of_executed() * 100.0
+    );
+    println!(
+        "coverage: {:.1}% ({} executed / {} cases)",
+        metrics.coverage() * 100.0,
+        metrics.executed_total,
+        total
+    );
+    println!(
+        "blocked: {} outcomes ({:.1}% of cases); labeled blocked {}/{} correct ({:.1}%)",
+        metrics.blocked,
+        metrics.blocked_rate() * 100.0,
+        metrics.blocked_correct,
+        metrics.expected_blocked,
+        metrics.blocked_accuracy() * 100.0
+    );
+    println!(
+        "executed-wrong 95% Clopper-Pearson upper: {:.2}% of total, {:.2}% of executed",
+        cp_total * 100.0,
+        cp_executed * 100.0
+    );
     println!("by operation:");
-    for (operation, (operation_total, operation_correct)) in &by_operation {
+    for (operation, tally) in &by_operation {
         println!(
-            "  {:<12} {:>3}/{:<3} correct",
-            operation, operation_correct, operation_total
+            "  {:<12} {:>3}/{:<3} correct, {:>3} executed, {:>2} executed wrong",
+            operation, tally.correct, tally.total, tally.executed_total, tally.executed_wrong
         );
     }
     println!(
         "decide latency: p50 {:.0} ms, p95 {:.0} ms, max {:.0} ms",
-        eval_percentile(&sorted, 0.50),
-        eval_percentile(&sorted, 0.95),
-        sorted.last().copied().unwrap_or(0.0)
+        p50, p95, max
     );
     if total_input > 0 || total_output > 0 {
         println!(
@@ -17031,17 +17117,43 @@ async fn e2e_decide_eval() {
         println!("tokens per call: not reported by this provider");
     }
     println!(
-        "gates: wrong actions under 1%: {}; p50 under 1000 ms: {}",
-        if total > 0 && (wrong_actions as f64) / (total as f64) < 0.01 {
-            "pass"
+        "gates: executed wrong / total under 1%: {} ({:.2}%); executed wrong / executed under 1%: {} ({:.2}%); coverage at least 90%: {} ({:.1}%); decision wrong under 1%: {} ({:.2}%); p50 under 1000 ms: {} ({:.0} ms)",
+        if gate_of_total { "pass" } else { "fail" },
+        metrics.executed_wrong_rate_of_total() * 100.0,
+        if gate_of_executed { "pass" } else { "fail" },
+        metrics.executed_wrong_rate_of_executed() * 100.0,
+        if gate_coverage { "pass" } else { "fail" },
+        metrics.coverage() * 100.0,
+        if gate_decision { "pass" } else { "fail" },
+        if total == 0 {
+            0.0
         } else {
-            "fail"
+            metrics.decision_wrong as f64 / total as f64 * 100.0
         },
-        if eval_percentile(&sorted, 0.50) < 1000.0 {
-            "pass"
-        } else {
-            "fail"
-        }
+        if gate_p50 { "pass" } else { "fail" },
+        p50
+    );
+    println!(
+        "SUMMARY {}",
+        serde_json::json!({
+            "total": metrics.total,
+            "correct": metrics.correct,
+            "decision_wrong": metrics.decision_wrong,
+            "errors": metrics.errors,
+            "executed_total": metrics.executed_total,
+            "executed_wrong": metrics.executed_wrong,
+            "executed_wrong_of_total": metrics.executed_wrong_rate_of_total(),
+            "executed_wrong_of_executed": metrics.executed_wrong_rate_of_executed(),
+            "coverage": metrics.coverage(),
+            "blocked": metrics.blocked,
+            "expected_blocked": metrics.expected_blocked,
+            "blocked_correct": metrics.blocked_correct,
+            "blocked_rate": metrics.blocked_rate(),
+            "cp_upper_of_total": cp_total,
+            "cp_upper_of_executed": cp_executed,
+            "latency_p50_ms": p50,
+            "destructive_labels": destructive,
+        })
     );
 }
 
@@ -17230,6 +17342,13 @@ async fn e2e_decide_eval_validate() {
     );
 
     println!("validated {} cases", file.cases.len());
+    println!(
+        "destructive labels: {}",
+        file.cases
+            .iter()
+            .filter(|case| case.expect.destructive)
+            .count()
+    );
     for (operation, count) in &by_operation {
         println!("  {:<12} {}", operation, count);
     }
