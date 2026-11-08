@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Workspace settings</title>
+  </head>
+  <body>
+    <h1>Workspace settings</h1>
+    <button role="tab">General</button>
+    <button role="tab">Members</button>
+    <button role="tab">Billing</button>
+    <button role="tab">Integrations</button>
+    <a href="/docs">Docs</a>
+    <label for="f21">Workspace name</label>
+    <input id="f21" type="text">
+    <label for="f22">Invite email</label>
+    <input id="f22" type="email">
+    <label for="f23">Search members</label>
+    <input id="f23" type="search">
+    <label for="f24">Time zone</label>
+    <select id="f24">
+          <option>UTC</option>
+          <option>Europe/Berlin</option>
+          <option>America/New_York</option>
+        </select>
+    <label for="f25">Default role</label>
+    <select id="f25">
+          <option>Admin</option>
+          <option>Editor</option>
+          <option>Viewer</option>
+        </select>
+    <label for="f26">Week starts on</label>
+    <select id="f26">
+          <option>Monday</option>
+          <option>Sunday</option>
+        </select>
+    <input id="f27" type="checkbox">
+    <label for="f27">Require two-factor authentication</label>
+    <input id="f28" type="checkbox" disabled>
+    <label for="f28">Allow guest access</label>
+    <button>Save changes</button>
+    <button>Discard</button>
+    <button>Send invite</button>
+    <button aria-disabled="true">Delete workspace</button>
+    <a href="/audit">View audit log</a>
+    <a href="/api-keys">Manage API keys</a>
+    <div style="height: 2400px"> </div>
+  </body>
+</html>

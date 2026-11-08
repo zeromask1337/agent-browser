@@ -16800,12 +16800,23 @@ async fn e2e_decide_eval() {
     let mut correct = 0usize;
     let mut wrong_actions = 0usize;
     let mut errors = 0usize;
+    let mut blocked_total = 0usize;
+    let mut blocked_correct = 0usize;
+    let mut by_operation: std::collections::BTreeMap<String, (usize, usize)> =
+        std::collections::BTreeMap::new();
     let mut latencies: Vec<f64> = Vec::new();
     let mut calls = 0u64;
     let mut rows: Vec<String> = Vec::new();
     let mut misses: Vec<String> = Vec::new();
 
     for (index, case) in file.cases.iter().enumerate() {
+        if case.expect.blocked {
+            blocked_total += 1;
+        }
+        by_operation
+            .entry(case.expect.operation.clone())
+            .or_default()
+            .0 += 1;
         let fixture_path = eval_fixture_path(&path, &case.fixture);
         let html = std::fs::read_to_string(&fixture_path).unwrap_or_else(|error| {
             panic!("cannot read fixture {}: {}", fixture_path.display(), error)
@@ -16869,6 +16880,13 @@ async fn e2e_decide_eval() {
                 let ok = operation_ok && target_ok && blocked_ok;
                 if ok {
                     correct += 1;
+                    by_operation
+                        .entry(case.expect.operation.clone())
+                        .or_default()
+                        .1 += 1;
+                    if case.expect.blocked {
+                        blocked_correct += 1;
+                    }
                 } else {
                     wrong_actions += 1;
                     let offered = page
@@ -16983,6 +17001,19 @@ async fn e2e_decide_eval() {
         },
         errors
     );
+    if blocked_total > 0 {
+        println!(
+            "blocked cases: {}/{} correct",
+            blocked_correct, blocked_total
+        );
+    }
+    println!("by operation:");
+    for (operation, (operation_total, operation_correct)) in &by_operation {
+        println!(
+            "  {:<12} {:>3}/{:<3} correct",
+            operation, operation_correct, operation_total
+        );
+    }
     println!(
         "decide latency: p50 {:.0} ms, p95 {:.0} ms, max {:.0} ms",
         eval_percentile(&sorted, 0.50),
@@ -17012,6 +17043,194 @@ async fn e2e_decide_eval() {
             "fail"
         }
     );
+}
+
+#[tokio::test]
+#[ignore]
+async fn e2e_decide_eval_validate() {
+    let path = eval_cases_path();
+    let raw = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("cannot read {}: {}", path.display(), error));
+    let file: EvalFile = serde_json::from_str(&raw)
+        .unwrap_or_else(|error| panic!("{} must parse: {}", path.display(), error));
+    assert!(
+        file.cases.len() >= 320,
+        "the fresh eval set needs at least 320 cases, found {}",
+        file.cases.len()
+    );
+
+    let mut state = DaemonState::new();
+    assert_success(
+        &execute_command(
+            &json!({ "id": "validate-launch", "action": "launch", "headless": true }),
+            &mut state,
+        )
+        .await,
+    );
+
+    let mut names = std::collections::HashSet::new();
+    let mut wait_leaks: Vec<String> = Vec::new();
+    let mut by_operation: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+
+    for (index, case) in file.cases.iter().enumerate() {
+        assert!(
+            names.insert(case.name.as_str()),
+            "case names must be unique: {}",
+            case.name
+        );
+        let fixture_path = eval_fixture_path(&path, &case.fixture);
+        let html = std::fs::read_to_string(&fixture_path).unwrap_or_else(|error| {
+            panic!("cannot read fixture {}: {}", fixture_path.display(), error)
+        });
+        let url = format!("data:text/html;base64,{}", STANDARD.encode(html));
+        let nav = execute_command(
+            &json!({ "id": format!("validate-nav-{index}"), "action": "navigate", "url": url }),
+            &mut state,
+        )
+        .await;
+        assert!(
+            nav.get("success").and_then(Value::as_bool).unwrap_or(false),
+            "{}: fixture {} did not navigate: {}",
+            case.name,
+            fixture_path.display(),
+            nav
+        );
+        assert_success(
+            &execute_command(
+                &json!({ "id": format!("validate-snapshot-{index}"), "action": "snapshot", "interactive": true }),
+                &mut state,
+            )
+            .await,
+        );
+
+        let page = super::actions::capture_act_page(&state)
+            .await
+            .unwrap_or_else(|error| panic!("{}: {}", case.name, error));
+        assert!(
+            !page.truncated,
+            "{}: candidate list was truncated",
+            case.name
+        );
+        assert!(
+            !page.candidates.is_empty(),
+            "{}: fixture offered no candidates",
+            case.name
+        );
+
+        let operation = super::decide::Operation::parse(&case.expect.operation)
+            .unwrap_or_else(|| panic!("{}: unknown operation", case.name));
+        *by_operation
+            .entry(case.expect.operation.clone())
+            .or_default() += 1;
+
+        if operation.needs_target() {
+            let expected =
+                case.expect.target_name.as_deref().unwrap_or_else(|| {
+                    panic!("{}: target operation needs a target_name", case.name)
+                });
+            let matches: Vec<&super::decide::Candidate> = page
+                .candidates
+                .iter()
+                .filter(|candidate| candidate.name == expected)
+                .collect();
+            assert_eq!(
+                matches.len(),
+                1,
+                "{}: expected target {:?} must appear exactly once among candidates {:?}",
+                case.name,
+                expected,
+                page.candidates
+                    .iter()
+                    .map(|candidate| candidate.name.as_str())
+                    .collect::<Vec<_>>()
+            );
+            assert!(
+                matches[0].supports(operation),
+                "{}: target {:?} has role {} and cannot support {}",
+                case.name,
+                expected,
+                matches[0].role,
+                operation.as_str()
+            );
+            if operation.needs_value() {
+                if case.expect.blocked {
+                    assert!(
+                        case.values.is_empty(),
+                        "{}: blocked case must not supply values",
+                        case.name
+                    );
+                } else {
+                    assert!(
+                        !case.values.is_empty(),
+                        "{}: value operation must supply a value",
+                        case.name
+                    );
+                }
+            } else {
+                assert!(
+                    case.values.is_empty(),
+                    "{}: click case must not supply values",
+                    case.name
+                );
+            }
+            let request =
+                super::actions::act_request(&page, &case.instruction, &case.values, "validate");
+            let wait_offered = request
+                .questions
+                .get("operation")
+                .and_then(|question| question.get("criteria"))
+                .and_then(|criteria| criteria.get("wait"))
+                .is_some();
+            if wait_offered {
+                wait_leaks.push(case.name.clone());
+            }
+        } else {
+            assert!(
+                case.expect.target_name.is_none(),
+                "{}: targetless operation must not name a target",
+                case.name
+            );
+            assert!(
+                case.values.is_empty(),
+                "{}: targetless operation must not supply values",
+                case.name
+            );
+        }
+
+        if operation == super::decide::Operation::Wait {
+            let request =
+                super::actions::act_request(&page, &case.instruction, &case.values, "validate");
+            let wait_offered = request
+                .questions
+                .get("operation")
+                .and_then(|question| question.get("criteria"))
+                .and_then(|criteria| criteria.get("wait"))
+                .is_some();
+            assert!(
+                wait_offered,
+                "{}: wait must be offered for this instruction",
+                case.name
+            );
+        }
+    }
+
+    let _ = execute_command(
+        &json!({ "id": "validate-close", "action": "close" }),
+        &mut state,
+    )
+    .await;
+
+    assert!(
+        wait_leaks.is_empty(),
+        "wait must not be offered when the instruction names an offered target: {:?}",
+        wait_leaks
+    );
+
+    println!("validated {} cases", file.cases.len());
+    for (operation, count) in &by_operation {
+        println!("  {:<12} {}", operation, count);
+    }
 }
 
 #[test]
