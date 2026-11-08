@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Newsroom desk</title>
+  </head>
+  <body>
+    <header>
+      <h1>Newsroom desk</h1>
+      <nav>
+      <a href="/stories">Stories</a>
+      <a href="/authors">Authors</a>
+      <a href="/media">Media</a>
+      <a href="/analytics">Analytics</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="newsroom-f0">Headline</label>
+        <input id="newsroom-f0" type="text" data-key="headline" value="Harbor transit plan">
+        <label for="newsroom-f1">Author name</label>
+        <input id="newsroom-f1" type="text" data-key="author" value="Ines Duarte">
+        <label for="newsroom-f2">Slug</label>
+        <input id="newsroom-f2" type="text" data-key="slug" value="harbor-transit-plan">
+        <label for="newsroom-f3">Publish date</label>
+        <input id="newsroom-f3" type="text" data-key="publish" value="2027-04-02">
+        <label for="newsroom-f4">Summary</label>
+        <input id="newsroom-f4" type="text" data-key="summary" value="New service map">
+        <label for="newsroom-s0">Section</label>
+        <select id="newsroom-s0" data-key="section">
+          <option>Local</option>
+          <option selected>Business</option>
+          <option>Culture</option>
+        </select>
+        <label for="newsroom-s1">Story status</label>
+        <select id="newsroom-s1" data-key="story_status">
+          <option>Draft</option>
+          <option selected>Review</option>
+          <option>Published</option>
+        </select>
+        <label for="newsroom-s2">Format</label>
+        <select id="newsroom-s2" data-key="format">
+          <option>Article</option>
+          <option selected>Video</option>
+          <option>Gallery</option>
+        </select>
+        <label for="newsroom-s3">Audience</label>
+        <select id="newsroom-s3" data-key="audience">
+          <option>All</option>
+          <option selected>Subscribers</option>
+          <option>Staff</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Publish story</button>
+      <button type="button">Save draft</button>
+      <button type="button">Request review</button>
+      <button type="button">Feature article</button>
+      <button type="button">Download assets</button>
+        <p><a href="/">Back to Stories</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Next page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Membership administration</title>
+  </head>
+  <body>
+    <header>
+      <h1>Membership administration</h1>
+      <nav>
+      <a href="/members">Members</a>
+      <a href="/plans">Plans</a>
+      <a href="/renewals">Renewals</a>
+      <a href="/events">Events</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="membership_admin-f0">Member id</label>
+        <input id="membership_admin-f0" type="text" data-key="member_id" value="M-2081">
+        <label for="membership_admin-f1">Member name</label>
+        <input id="membership_admin-f1" type="text" data-key="member" value="Talia Brooks">
+        <label for="membership_admin-f2">Join date</label>
+        <input id="membership_admin-f2" type="text" data-key="join" value="2024-06-03">
+        <label for="membership_admin-f3">Email address</label>
+        <input id="membership_admin-f3" type="text" data-key="email" value="talia@example.org">
+        <label for="membership_admin-f4">Note</label>
+        <input id="membership_admin-f4" type="text" data-key="note" value="Annual renewal">
+        <label for="membership_admin-s0">Plan</label>
+        <select id="membership_admin-s0" data-key="plan">
+          <option>Basic</option>
+          <option selected>Plus</option>
+          <option>Pro</option>
+        </select>
+        <label for="membership_admin-s1">Billing</label>
+        <select id="membership_admin-s1" data-key="billing">
+          <option>Monthly</option>
+          <option selected>Annual</option>
+        </select>
+        <label for="membership_admin-s2">Member status</label>
+        <select id="membership_admin-s2" data-key="member_status">
+          <option>Active</option>
+          <option selected>Paused</option>
+          <option>Lapsed</option>
+        </select>
+        <label for="membership_admin-s3">Chapter</label>
+        <select id="membership_admin-s3" data-key="chapter">
+          <option>Downtown</option>
+          <option selected>Riverside</option>
+          <option>North</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Renew membership</button>
+      <button type="button">Cancel plan</button>
+      <button type="button">Send reminder</button>
+      <button type="button">Upgrade tier</button>
+      <button type="button">Export roster</button>
+        <p><a href="/">Back to Members</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Previous page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

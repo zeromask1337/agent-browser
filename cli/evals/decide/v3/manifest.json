@@ -1,0 +1,25 @@
+{
+  "seed": 20261109,
+  "generated_by": "cli/evals/decide/v3/generate.mjs",
+  "generated_on": "2026-11-08",
+  "label_source": "Case labels were written from each page's element list and instruction intent before any decider call. No label is derived from model output.",
+  "pages": 16,
+  "cases": 333,
+  "blocked_cases": 32,
+  "by_operation": {
+    "click": 93,
+    "fill": 108,
+    "select": 64,
+    "scroll_down": 16,
+    "scroll_up": 16,
+    "back": 18,
+    "wait": 18
+  },
+  "notes": [
+    "Fixtures are rendered from the element lists in generate.mjs.",
+    "Target accessible names appear exactly once per page; similar and duplicate distractor names are intentional and never labeled.",
+    "Blocked cases are fill or select requests whose caller supplied no value.",
+    "The seed is fixed at 20261109 for reproducibility; fixture text and labels contain no randomness.",
+    "No case expects done. act has no done operation."
+  ]
+}

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Payroll administration</title>
+  </head>
+  <body>
+    <header>
+      <h1>Payroll administration</h1>
+      <nav>
+      <a href="/runs">Runs</a>
+      <a href="/employees">Employees</a>
+      <a href="/deductions">Deductions</a>
+      <a href="/reports">Reports</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="payroll_admin-f0">Pay period</label>
+        <input id="payroll_admin-f0" type="text" data-key="period" value="2027-03">
+        <label for="payroll_admin-f1">Employee name</label>
+        <input id="payroll_admin-f1" type="text" data-key="employee" value="Priya Nair">
+        <label for="payroll_admin-f2">Employee id</label>
+        <input id="payroll_admin-f2" type="text" data-key="employee_id" value="E-10442">
+        <label for="payroll_admin-f3">Bank account</label>
+        <input id="payroll_admin-f3" type="text" data-key="bank" value="8842">
+        <label for="payroll_admin-f4">Memo</label>
+        <input id="payroll_admin-f4" type="text" data-key="memo" value="March adjustment">
+        <label for="payroll_admin-s0">Pay group</label>
+        <select id="payroll_admin-s0" data-key="group">
+          <option>Weekly</option>
+          <option selected>Biweekly</option>
+          <option>Monthly</option>
+        </select>
+        <label for="payroll_admin-s1">Cost center</label>
+        <select id="payroll_admin-s1" data-key="center">
+          <option selected>Operations</option>
+          <option>Sales</option>
+          <option>Support</option>
+        </select>
+        <label for="payroll_admin-s2">Currency</label>
+        <select id="payroll_admin-s2" data-key="currency">
+          <option selected>USD</option>
+          <option>CAD</option>
+          <option>EUR</option>
+        </select>
+        <label for="payroll_admin-s3">Method</label>
+        <select id="payroll_admin-s3" data-key="method">
+          <option selected>Direct deposit</option>
+          <option>Check</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Approve payroll</button>
+      <button type="button">Hold payment</button>
+      <button type="button">Add deduction</button>
+      <button type="button">Recalculate taxes</button>
+      <button type="button">Export register</button>
+        <p><a href="/">Back to Runs</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Next page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

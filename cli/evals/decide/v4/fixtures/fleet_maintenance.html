@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fleet maintenance board</title>
+  </head>
+  <body>
+    <header>
+      <h1>Fleet maintenance board</h1>
+      <nav>
+      <a href="/vehicles">Vehicles</a>
+      <a href="/work-orders">Work orders</a>
+      <a href="/inspections">Inspections</a>
+      <a href="/fuel">Fuel</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="fleet_maintenance-f0">Vehicle id</label>
+        <input id="fleet_maintenance-f0" type="text" data-key="vehicle" value="VAN-317">
+        <label for="fleet_maintenance-f1">Odometer</label>
+        <input id="fleet_maintenance-f1" type="text" data-key="odometer" value="84210">
+        <label for="fleet_maintenance-f2">Driver name</label>
+        <input id="fleet_maintenance-f2" type="text" data-key="driver" value="Luis Ortega">
+        <label for="fleet_maintenance-f3">Garage bay</label>
+        <input id="fleet_maintenance-f3" type="text" data-key="bay" value="B-2">
+        <label for="fleet_maintenance-f4">Fault note</label>
+        <input id="fleet_maintenance-f4" type="text" data-key="fault" value="Brake vibration">
+        <label for="fleet_maintenance-s0">Service type</label>
+        <select id="fleet_maintenance-s0" data-key="service">
+          <option>Oil change</option>
+          <option>Tire rotation</option>
+          <option selected>Brake service</option>
+        </select>
+        <label for="fleet_maintenance-s1">Depot</label>
+        <select id="fleet_maintenance-s1" data-key="depot">
+          <option>North</option>
+          <option>South</option>
+          <option selected>Harbor</option>
+        </select>
+        <label for="fleet_maintenance-s2">Job status</label>
+        <select id="fleet_maintenance-s2" data-key="job_status">
+          <option>Open</option>
+          <option selected>Scheduled</option>
+          <option>Done</option>
+        </select>
+        <label for="fleet_maintenance-s3">Severity</label>
+        <select id="fleet_maintenance-s3" data-key="severity">
+          <option>Low</option>
+          <option>Medium</option>
+          <option selected>High</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Schedule service</button>
+      <button type="button">Mark inspected</button>
+      <button type="button">Order tires</button>
+      <button type="button">Report fault</button>
+      <button type="button">Download log</button>
+        <p><a href="/">Back to Vehicles</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Previous page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

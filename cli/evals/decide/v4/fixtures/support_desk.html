@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Support desk queue</title>
+  </head>
+  <body>
+    <header>
+      <h1>Support desk queue</h1>
+      <nav>
+      <a href="/tickets">Tickets</a>
+      <a href="/queues">Queues</a>
+      <a href="/agents">Agents</a>
+      <a href="/knowledge">Knowledge</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="support_desk-f0">Ticket id</label>
+        <input id="support_desk-f0" type="text" data-key="ticket" value="SD-5510">
+        <label for="support_desk-f1">Subject</label>
+        <input id="support_desk-f1" type="text" data-key="subject" value="Login loop">
+        <label for="support_desk-f2">Requester name</label>
+        <input id="support_desk-f2" type="text" data-key="requester" value="Mina Patel">
+        <label for="support_desk-f3">Agent name</label>
+        <input id="support_desk-f3" type="text" data-key="agent" value="Chris Doyle">
+        <label for="support_desk-f4">Resolution note</label>
+        <input id="support_desk-f4" type="text" data-key="resolution" value="Cleared the cache">
+        <label for="support_desk-s0">Priority</label>
+        <select id="support_desk-s0" data-key="priority">
+          <option>Low</option>
+          <option>Normal</option>
+          <option selected>High</option>
+        </select>
+        <label for="support_desk-s1">Queue</label>
+        <select id="support_desk-s1" data-key="queue">
+          <option>Billing</option>
+          <option selected>Technical</option>
+          <option>Account</option>
+        </select>
+        <label for="support_desk-s2">Ticket status</label>
+        <select id="support_desk-s2" data-key="ticket_status">
+          <option>New</option>
+          <option selected>Open</option>
+          <option>Resolved</option>
+        </select>
+        <label for="support_desk-s3">Channel</label>
+        <select id="support_desk-s3" data-key="channel">
+          <option>Email</option>
+          <option selected>Chat</option>
+          <option>Phone</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Assign ticket</button>
+      <button type="button">Escalate ticket</button>
+      <button type="button">Close ticket</button>
+      <button type="button">Add tag</button>
+      <button type="button">Export queue</button>
+        <p><a href="/">Back to Tickets</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Previous page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

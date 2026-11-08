@@ -16468,3 +16468,939 @@ async fn e2e_flow_keeps_vault_and_key_by_key_passwords_out_of_flows() {
     .await;
     let _ = exec(&run(&mut n, json!({ "action": "close" })), &mut state).await;
 }
+
+struct ClickNamedDecider {
+    name_fragment: String,
+}
+
+#[async_trait::async_trait]
+impl super::decide::Decider for ClickNamedDecider {
+    fn name(&self) -> &'static str {
+        "stub"
+    }
+
+    fn model(&self) -> &str {
+        "stub"
+    }
+
+    async fn decide(
+        &self,
+        request: &super::decide::DecisionRequest,
+    ) -> Result<super::decide::DeciderResponse, super::decide::DecideError> {
+        let criteria = request.questions["target"]["criteria"]
+            .as_object()
+            .ok_or(super::decide::DecideError::Protocol)?;
+        let target = criteria
+            .iter()
+            .find(|(_, description)| {
+                description
+                    .as_str()
+                    .is_some_and(|text| text.contains(&self.name_fragment))
+            })
+            .map(|(key, _)| key.clone())
+            .ok_or(super::decide::DecideError::Protocol)?;
+
+        let operation_keys = request.questions["operation"]["criteria"]
+            .as_object()
+            .ok_or(super::decide::DecideError::Protocol)?;
+        let mut operation_probabilities = serde_json::Map::new();
+        for key in operation_keys.keys() {
+            operation_probabilities
+                .insert(key.clone(), json!(if key == "click" { 1.0 } else { 0.0 }));
+        }
+        let mut target_probabilities = serde_json::Map::new();
+        for key in criteria.keys() {
+            target_probabilities.insert(key.clone(), json!(if key == &target { 1.0 } else { 0.0 }));
+        }
+
+        Ok(super::decide::DeciderResponse {
+            answers: json!({
+                "operation": {
+                    "type": "choice",
+                    "choice": "click",
+                    "confidence": 1.0,
+                    "probabilities": operation_probabilities,
+                },
+                "target": {
+                    "type": "choice",
+                    "choice": target,
+                    "confidence": 1.0,
+                    "probabilities": target_probabilities,
+                }
+            }),
+            input_tokens: None,
+            output_tokens: None,
+        })
+    }
+}
+
+#[tokio::test]
+#[ignore]
+async fn e2e_act_with_stub_decider_clicks_offered_ref() {
+    let html = r#"<!doctype html><html><body>
+<button id="no">Cancel</button>
+<button id="go" onclick="window.__clicked = this.id">Submit order</button>
+<script>window.__clicked = null;</script>
+</body></html>"#;
+    let url = format!("data:text/html;base64,{}", STANDARD.encode(html));
+    let mut state = DaemonState::new();
+
+    assert_success(
+        &execute_command(
+            &json!({ "id": "1", "action": "launch", "headless": true }),
+            &mut state,
+        )
+        .await,
+    );
+    assert_success(
+        &execute_command(
+            &json!({ "id": "2", "action": "navigate", "url": url }),
+            &mut state,
+        )
+        .await,
+    );
+    assert_success(
+        &execute_command(
+            &json!({ "id": "3", "action": "snapshot", "interactive": true }),
+            &mut state,
+        )
+        .await,
+    );
+
+    let decider = ClickNamedDecider {
+        name_fragment: "Submit order".to_string(),
+    };
+    let data = super::actions::handle_act_with(
+        &json!({ "id": "4", "action": "act", "instruction": "Click Submit order" }),
+        &mut state,
+        &decider,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(data["status"], "executed");
+    assert_eq!(data["operation"], "click");
+    assert!(data["target"]
+        .as_str()
+        .is_some_and(|target| target.starts_with('e')));
+
+    assert_evaluate(&mut state, "5", "window.__clicked", json!("go")).await;
+
+    let _ = execute_command(&json!({ "id": "6", "action": "close" }), &mut state).await;
+}
+
+#[tokio::test]
+#[ignore]
+async fn e2e_act_candidates_skip_disabled_controls_and_mark_click_roles() {
+    let html = r#"<!doctype html><html><body>
+<button>Send</button>
+<button disabled>Publish report</button>
+<div role="button" aria-disabled="true" tabindex="0">Archive</div>
+<fieldset disabled><button>Save draft</button></fieldset>
+<input aria-label="Email">
+<select aria-label="Country"><option>Germany</option></select>
+</body></html>"#;
+    let url = format!("data:text/html;base64,{}", STANDARD.encode(html));
+    let mut state = DaemonState::new();
+
+    assert_success(
+        &execute_command(
+            &json!({ "id": "1", "action": "launch", "headless": true }),
+            &mut state,
+        )
+        .await,
+    );
+    assert_success(
+        &execute_command(
+            &json!({ "id": "2", "action": "navigate", "url": url }),
+            &mut state,
+        )
+        .await,
+    );
+    assert_success(
+        &execute_command(
+            &json!({ "id": "3", "action": "snapshot", "interactive": true }),
+            &mut state,
+        )
+        .await,
+    );
+
+    let page = super::actions::capture_act_page(&state).await.unwrap();
+    let names: Vec<&str> = page
+        .candidates
+        .iter()
+        .map(|candidate| candidate.name.as_str())
+        .collect();
+    assert!(
+        !names.contains(&"Publish report"),
+        "disabled attribute must be filtered: {:?}",
+        names
+    );
+    assert!(
+        !names.contains(&"Archive"),
+        "aria-disabled must be filtered: {:?}",
+        names
+    );
+    assert!(
+        !names.contains(&"Save draft"),
+        "disabled fieldset ancestor must be filtered: {:?}",
+        names
+    );
+
+    let by_name = |name: &str| {
+        page.candidates
+            .iter()
+            .find(|candidate| candidate.name == name)
+            .unwrap_or_else(|| panic!("{} must be offered: {:?}", name, names))
+    };
+    assert!(by_name("Send").activates, "a button activates on click");
+    assert!(
+        !by_name("Email").activates,
+        "a textbox is not a click target"
+    );
+    assert!(
+        !by_name("Country").activates,
+        "a select is not a click target"
+    );
+
+    let _ = execute_command(&json!({ "id": "4", "action": "close" }), &mut state).await;
+}
+
+#[derive(serde::Deserialize)]
+struct EvalFile {
+    cases: Vec<EvalCase>,
+}
+
+#[derive(serde::Deserialize)]
+struct EvalCase {
+    name: String,
+    fixture: String,
+    instruction: String,
+    #[serde(default)]
+    values: serde_json::Map<String, Value>,
+    expect: EvalExpect,
+}
+
+#[derive(serde::Deserialize)]
+struct EvalExpect {
+    operation: String,
+    target_name: Option<String>,
+    /// When true, the decision must also be blocked for lack of a value.
+    #[serde(default)]
+    blocked: bool,
+    /// Labels a case whose action a caller policy would confirm. The runner
+    /// does not execute proposals, so a labeled destructive case is classified
+    /// `confirmation_required` and never counted as would-execute. The frozen
+    /// eval fixtures are non-destructive, so this label is normally absent.
+    #[serde(default)]
+    destructive: bool,
+}
+
+#[derive(Default)]
+struct EvalOpTally {
+    total: usize,
+    correct: usize,
+    executed_total: usize,
+    executed_wrong: usize,
+}
+
+/// Cases file for the decision eval. `AGENT_BROWSER_DECIDE_CASES` overrides
+/// the checked-in default so a held-out set can run against the same runner.
+fn eval_cases_path_from(override_path: Option<std::ffi::OsString>) -> std::path::PathBuf {
+    override_path
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| {
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("evals")
+                .join("decide")
+                .join("cases.json")
+        })
+}
+
+fn eval_cases_path() -> std::path::PathBuf {
+    eval_cases_path_from(std::env::var_os("AGENT_BROWSER_DECIDE_CASES"))
+}
+
+/// Fixtures live beside the cases file, or in the native test fixtures when a
+/// cases file points at a shared fixture directory.
+fn eval_fixture_path(cases_path: &std::path::Path, fixture: &str) -> std::path::PathBuf {
+    let sibling = cases_path
+        .parent()
+        .unwrap_or_else(|| std::path::Path::new("."))
+        .join("fixtures")
+        .join(fixture);
+    if sibling.is_file() {
+        return sibling;
+    }
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("src")
+        .join("native")
+        .join("test_fixtures")
+        .join(fixture)
+}
+
+struct CountingDecider<'a> {
+    inner: &'a dyn super::decide::Decider,
+    input_tokens: std::sync::atomic::AtomicU64,
+    output_tokens: std::sync::atomic::AtomicU64,
+}
+
+#[async_trait::async_trait]
+impl super::decide::Decider for CountingDecider<'_> {
+    fn name(&self) -> &'static str {
+        self.inner.name()
+    }
+
+    fn model(&self) -> &str {
+        self.inner.model()
+    }
+
+    fn calibrated(&self) -> bool {
+        self.inner.calibrated()
+    }
+
+    async fn decide(
+        &self,
+        request: &super::decide::DecisionRequest,
+    ) -> Result<super::decide::DeciderResponse, super::decide::DecideError> {
+        let response = self.inner.decide(request).await?;
+        use std::sync::atomic::Ordering;
+        if let Some(tokens) = response.input_tokens {
+            self.input_tokens.fetch_add(tokens, Ordering::SeqCst);
+        }
+        if let Some(tokens) = response.output_tokens {
+            self.output_tokens.fetch_add(tokens, Ordering::SeqCst);
+        }
+        Ok(response)
+    }
+}
+
+fn eval_percentile(sorted: &[f64], percentile: f64) -> f64 {
+    if sorted.is_empty() {
+        return 0.0;
+    }
+    let index = ((sorted.len() as f64 * percentile).ceil() as usize)
+        .saturating_sub(1)
+        .min(sorted.len() - 1);
+    sorted[index]
+}
+
+/// A decision is correct only when the operation and target match and the
+/// blocked status matches the label. A non-blocked case that returns a blocked
+/// reason is a utility failure, not a pass.
+fn eval_decision_is_correct(
+    operation_ok: bool,
+    target_ok: bool,
+    expected_blocked: bool,
+    has_blocked_reason: bool,
+) -> bool {
+    operation_ok && target_ok && expected_blocked == has_blocked_reason
+}
+
+#[test]
+fn eval_decision_status_must_match_the_label() {
+    assert!(eval_decision_is_correct(true, true, true, true));
+    assert!(!eval_decision_is_correct(true, true, true, false));
+    assert!(!eval_decision_is_correct(true, true, false, true));
+    assert!(eval_decision_is_correct(true, true, false, false));
+    assert!(!eval_decision_is_correct(false, true, false, false));
+    assert!(!eval_decision_is_correct(true, false, false, false));
+}
+
+#[tokio::test]
+#[ignore]
+async fn e2e_decide_eval() {
+    use super::decide::Decider as _;
+    let path = eval_cases_path();
+    let raw = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("cannot read {}: {}", path.display(), error));
+    let file: EvalFile = serde_json::from_str(&raw)
+        .unwrap_or_else(|error| panic!("{} must parse: {}", path.display(), error));
+
+    let decider = super::decide::decider_from_env().expect("set AGENT_BROWSER_DECIDER and its key");
+    let counting = CountingDecider {
+        inner: decider.as_ref(),
+        input_tokens: std::sync::atomic::AtomicU64::new(0),
+        output_tokens: std::sync::atomic::AtomicU64::new(0),
+    };
+
+    let mut state = DaemonState::new();
+    assert_success(
+        &execute_command(
+            &json!({ "id": "eval-launch", "action": "launch", "headless": true }),
+            &mut state,
+        )
+        .await,
+    );
+
+    let mut metrics = super::decide::ProposalMetrics::default();
+    let mut by_operation: std::collections::BTreeMap<String, EvalOpTally> =
+        std::collections::BTreeMap::new();
+    let mut latencies: Vec<f64> = Vec::new();
+    let mut calls = 0u64;
+    let mut rows: Vec<String> = Vec::new();
+    let mut misses: Vec<String> = Vec::new();
+    let mut executed_misses: Vec<String> = Vec::new();
+
+    for (index, case) in file.cases.iter().enumerate() {
+        by_operation
+            .entry(case.expect.operation.clone())
+            .or_default()
+            .total += 1;
+        let fixture_path = eval_fixture_path(&path, &case.fixture);
+        let html = std::fs::read_to_string(&fixture_path).unwrap_or_else(|error| {
+            panic!("cannot read fixture {}: {}", fixture_path.display(), error)
+        });
+        let url = format!("data:text/html;base64,{}", STANDARD.encode(html));
+        let nav = execute_command(
+            &json!({ "id": format!("eval-nav-{index}"), "action": "navigate", "url": url }),
+            &mut state,
+        )
+        .await;
+        if !nav.get("success").and_then(Value::as_bool).unwrap_or(false) {
+            metrics.record_error(case.expect.blocked);
+            rows.push(format!(
+                "{} | {} | navigation failed | - | - | error | FAIL",
+                case.name, case.expect.operation
+            ));
+            continue;
+        }
+        assert_success(
+            &execute_command(
+                &json!({ "id": format!("eval-snapshot-{index}"), "action": "snapshot", "interactive": true }),
+                &mut state,
+            )
+            .await,
+        );
+
+        let page = super::actions::capture_act_page(&state)
+            .await
+            .unwrap_or_else(|error| panic!("{}: {}", case.name, error));
+        let request =
+            super::actions::act_request(&page, &case.instruction, &case.values, counting.model());
+
+        let before_in = counting
+            .input_tokens
+            .load(std::sync::atomic::Ordering::SeqCst);
+        let started = std::time::Instant::now();
+        let decision = super::decide::decide_with_retry(&counting, &request).await;
+        let elapsed_ms = started.elapsed().as_secs_f64() * 1000.0;
+        latencies.push(elapsed_ms);
+        calls += 1;
+        let input_tokens = counting
+            .input_tokens
+            .load(std::sync::atomic::Ordering::SeqCst)
+            .saturating_sub(before_in);
+
+        match decision {
+            Ok(decision) => {
+                let operation_ok = decision.operation.as_str() == case.expect.operation;
+                let target_name = decision.target.as_ref().and_then(|key| {
+                    page.candidates
+                        .iter()
+                        .find(|candidate| &candidate.key == key)
+                        .map(|candidate| candidate.name.clone())
+                });
+                let target_ok = match &case.expect.target_name {
+                    Some(expected) => target_name.as_deref() == Some(expected.as_str()),
+                    None => true,
+                };
+                let blocked_ok = !case.expect.blocked || decision.blocked_reason.is_some();
+                let ok = eval_decision_is_correct(
+                    operation_ok,
+                    target_ok,
+                    case.expect.blocked,
+                    decision.blocked_reason.is_some(),
+                );
+                // The runner does not execute proposals. It classifies them with
+                // the same gate `handle_act_with` uses, with dry-run and a moved
+                // page off, and the confidence floor at the act default of none.
+                let outcome = super::decide::proposal_outcome(
+                    &decision,
+                    counting.calibrated(),
+                    None,
+                    false,
+                    false,
+                    case.expect.destructive,
+                );
+                metrics.record(Some(outcome), case.expect.blocked, ok);
+                let tally = by_operation
+                    .entry(case.expect.operation.clone())
+                    .or_default();
+                if ok {
+                    tally.correct += 1;
+                }
+                if outcome.would_execute() {
+                    tally.executed_total += 1;
+                    if !ok {
+                        tally.executed_wrong += 1;
+                    }
+                }
+                if !ok {
+                    let offered = page
+                        .candidates
+                        .iter()
+                        .map(|candidate| {
+                            format!(
+                                "{}={}/{}",
+                                candidate.key,
+                                candidate.role,
+                                if candidate.name.is_empty() {
+                                    "(unnamed)"
+                                } else {
+                                    candidate.name.as_str()
+                                }
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    let miss = format!(
+                        "MISS {}: instruction {:?}; expected {} target {:?}{}; got {} target {:?}{}; outcome {}; blocked_reason {:?}; candidates [{}]",
+                        case.name,
+                        case.instruction,
+                        case.expect.operation,
+                        case.expect.target_name,
+                        if case.expect.blocked { " blocked" } else { "" },
+                        decision.operation.as_str(),
+                        target_name,
+                        decision
+                            .target
+                            .as_deref()
+                            .map(|key| format!(" ({})", key))
+                            .unwrap_or_default(),
+                        outcome.as_str(),
+                        decision.blocked_reason,
+                        offered
+                    );
+                    misses.push(miss.clone());
+                    if outcome.would_execute() {
+                        executed_misses.push(miss);
+                    }
+                }
+                rows.push(format!(
+                    "{} | {} | {}{} | {} | {} | {:.0} | {}",
+                    case.name,
+                    case.expect.operation,
+                    decision.operation.as_str(),
+                    if operation_ok { "" } else { " (wrong op)" },
+                    target_name.unwrap_or_else(|| "-".to_string()),
+                    outcome.as_str(),
+                    elapsed_ms,
+                    if ok { "ok" } else { "FAIL" }
+                ));
+                if case.expect.blocked && !blocked_ok {
+                    rows.last_mut().unwrap().push_str(" [not blocked]");
+                }
+                if outcome.would_execute() && !ok {
+                    rows.last_mut().unwrap().push_str(" [EXECUTED-WRONG]");
+                }
+                if case.expect.destructive {
+                    rows.last_mut().unwrap().push_str(" [destructive label]");
+                }
+                if input_tokens > 0 {
+                    rows.last_mut()
+                        .unwrap()
+                        .push_str(&format!(" [{} tok]", input_tokens));
+                }
+            }
+            Err(error) => {
+                metrics.record_error(case.expect.blocked);
+                rows.push(format!(
+                    "{} | {} | error: {} | - | error | {:.0} | FAIL",
+                    case.name,
+                    case.expect.operation,
+                    error.message(),
+                    elapsed_ms
+                ));
+            }
+        }
+    }
+
+    let _ = execute_command(
+        &json!({ "id": "eval-close", "action": "close" }),
+        &mut state,
+    )
+    .await;
+
+    let total = metrics.total;
+    let mut sorted = latencies.clone();
+    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let p50 = eval_percentile(&sorted, 0.50);
+    let p95 = eval_percentile(&sorted, 0.95);
+    let max = sorted.last().copied().unwrap_or(0.0);
+    let total_input = counting
+        .input_tokens
+        .load(std::sync::atomic::Ordering::SeqCst);
+    let total_output = counting
+        .output_tokens
+        .load(std::sync::atomic::Ordering::SeqCst);
+    let cp_total =
+        super::decide::clopper_pearson_upper(metrics.executed_wrong, metrics.total, 0.95);
+    let cp_executed = if metrics.executed_total > 0 {
+        super::decide::clopper_pearson_upper(metrics.executed_wrong, metrics.executed_total, 0.95)
+    } else {
+        1.0
+    };
+    let destructive = file
+        .cases
+        .iter()
+        .filter(|case| case.expect.destructive)
+        .count();
+    let gate_of_total = metrics.executed_wrong_rate_of_total() < 0.01;
+    let gate_of_executed =
+        metrics.executed_total > 0 && metrics.executed_wrong_rate_of_executed() < 0.01;
+    let gate_coverage = metrics.coverage() >= 0.90;
+    let gate_decision = total > 0 && (metrics.decision_wrong as f64) / (total as f64) < 0.01;
+    let gate_p50 = p50 < 1000.0;
+
+    println!("\ndecider: {} ({})", counting.name(), counting.model());
+    println!("cases: {}", total);
+    println!(
+        "min confidence: none (act default); destructive labels: {}",
+        destructive
+    );
+    println!(
+        "{:<40} | {:<12} | {:<18} | {:<26} | {:<20} | {:>6} | result",
+        "case", "expected", "got", "target", "outcome", "ms"
+    );
+    for row in &rows {
+        println!("{}", row);
+    }
+    for miss in &misses {
+        println!("\n{}", miss);
+    }
+    if !executed_misses.is_empty() {
+        println!(
+            "\nEXECUTED-WRONG failures ({} of {} executed):",
+            executed_misses.len(),
+            metrics.executed_total
+        );
+        for miss in &executed_misses {
+            println!("{}", miss);
+        }
+    }
+    println!(
+        "\ndecision: correct {} ({:.1}%), wrong {} ({:.1}%), errors {}",
+        metrics.correct,
+        if total == 0 {
+            0.0
+        } else {
+            metrics.correct as f64 / total as f64 * 100.0
+        },
+        metrics.decision_wrong,
+        if total == 0 {
+            0.0
+        } else {
+            metrics.decision_wrong as f64 / total as f64 * 100.0
+        },
+        metrics.errors
+    );
+    println!(
+        "would execute: {} of {} cases; executed wrong: {} ({:.2}% of total, {:.2}% of executed)",
+        metrics.executed_total,
+        total,
+        metrics.executed_wrong,
+        metrics.executed_wrong_rate_of_total() * 100.0,
+        metrics.executed_wrong_rate_of_executed() * 100.0
+    );
+    println!(
+        "coverage: {:.1}% ({} executed / {} cases)",
+        metrics.coverage() * 100.0,
+        metrics.executed_total,
+        total
+    );
+    println!(
+        "blocked: {} outcomes ({:.1}% of cases); labeled blocked {}/{} correct ({:.1}%)",
+        metrics.blocked,
+        metrics.blocked_rate() * 100.0,
+        metrics.blocked_correct,
+        metrics.expected_blocked,
+        metrics.blocked_accuracy() * 100.0
+    );
+    println!(
+        "executed-wrong 95% Clopper-Pearson upper: {:.2}% of total, {:.2}% of executed",
+        cp_total * 100.0,
+        cp_executed * 100.0
+    );
+    println!("by operation:");
+    for (operation, tally) in &by_operation {
+        println!(
+            "  {:<12} {:>3}/{:<3} correct, {:>3} executed, {:>2} executed wrong",
+            operation, tally.correct, tally.total, tally.executed_total, tally.executed_wrong
+        );
+    }
+    println!(
+        "decide latency: p50 {:.0} ms, p95 {:.0} ms, max {:.0} ms",
+        p50, p95, max
+    );
+    if total_input > 0 || total_output > 0 {
+        println!(
+            "tokens per call: {:.0} input, {:.0} output ({} calls)",
+            total_input as f64 / calls.max(1) as f64,
+            total_output as f64 / calls.max(1) as f64,
+            calls
+        );
+    } else {
+        println!("tokens per call: not reported by this provider");
+    }
+    println!(
+        "gates: executed wrong / total under 1%: {} ({:.2}%); executed wrong / executed under 1%: {} ({:.2}%); coverage at least 90%: {} ({:.1}%); decision wrong under 1%: {} ({:.2}%); p50 under 1000 ms: {} ({:.0} ms)",
+        if gate_of_total { "pass" } else { "fail" },
+        metrics.executed_wrong_rate_of_total() * 100.0,
+        if gate_of_executed { "pass" } else { "fail" },
+        metrics.executed_wrong_rate_of_executed() * 100.0,
+        if gate_coverage { "pass" } else { "fail" },
+        metrics.coverage() * 100.0,
+        if gate_decision { "pass" } else { "fail" },
+        if total == 0 {
+            0.0
+        } else {
+            metrics.decision_wrong as f64 / total as f64 * 100.0
+        },
+        if gate_p50 { "pass" } else { "fail" },
+        p50
+    );
+    println!(
+        "SUMMARY {}",
+        serde_json::json!({
+            "total": metrics.total,
+            "correct": metrics.correct,
+            "decision_wrong": metrics.decision_wrong,
+            "errors": metrics.errors,
+            "executed_total": metrics.executed_total,
+            "executed_wrong": metrics.executed_wrong,
+            "executed_wrong_of_total": metrics.executed_wrong_rate_of_total(),
+            "executed_wrong_of_executed": metrics.executed_wrong_rate_of_executed(),
+            "coverage": metrics.coverage(),
+            "blocked": metrics.blocked,
+            "expected_blocked": metrics.expected_blocked,
+            "blocked_correct": metrics.blocked_correct,
+            "blocked_rate": metrics.blocked_rate(),
+            "cp_upper_of_total": cp_total,
+            "cp_upper_of_executed": cp_executed,
+            "latency_p50_ms": p50,
+            "destructive_labels": destructive,
+        })
+    );
+}
+
+#[tokio::test]
+#[ignore]
+async fn e2e_decide_eval_validate() {
+    let path = eval_cases_path();
+    let raw = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("cannot read {}: {}", path.display(), error));
+    let file: EvalFile = serde_json::from_str(&raw)
+        .unwrap_or_else(|error| panic!("{} must parse: {}", path.display(), error));
+    assert!(
+        file.cases.len() >= 320,
+        "the fresh eval set needs at least 320 cases, found {}",
+        file.cases.len()
+    );
+
+    let mut state = DaemonState::new();
+    assert_success(
+        &execute_command(
+            &json!({ "id": "validate-launch", "action": "launch", "headless": true }),
+            &mut state,
+        )
+        .await,
+    );
+
+    let mut names = std::collections::HashSet::new();
+    let mut wait_leaks: Vec<String> = Vec::new();
+    let mut by_operation: std::collections::BTreeMap<String, usize> =
+        std::collections::BTreeMap::new();
+
+    for (index, case) in file.cases.iter().enumerate() {
+        assert!(
+            names.insert(case.name.as_str()),
+            "case names must be unique: {}",
+            case.name
+        );
+        let fixture_path = eval_fixture_path(&path, &case.fixture);
+        let html = std::fs::read_to_string(&fixture_path).unwrap_or_else(|error| {
+            panic!("cannot read fixture {}: {}", fixture_path.display(), error)
+        });
+        let url = format!("data:text/html;base64,{}", STANDARD.encode(html));
+        let nav = execute_command(
+            &json!({ "id": format!("validate-nav-{index}"), "action": "navigate", "url": url }),
+            &mut state,
+        )
+        .await;
+        assert!(
+            nav.get("success").and_then(Value::as_bool).unwrap_or(false),
+            "{}: fixture {} did not navigate: {}",
+            case.name,
+            fixture_path.display(),
+            nav
+        );
+        assert_success(
+            &execute_command(
+                &json!({ "id": format!("validate-snapshot-{index}"), "action": "snapshot", "interactive": true }),
+                &mut state,
+            )
+            .await,
+        );
+
+        let page = super::actions::capture_act_page(&state)
+            .await
+            .unwrap_or_else(|error| panic!("{}: {}", case.name, error));
+        assert!(
+            !page.truncated,
+            "{}: candidate list was truncated",
+            case.name
+        );
+        assert!(
+            !page.candidates.is_empty(),
+            "{}: fixture offered no candidates",
+            case.name
+        );
+
+        let operation = super::decide::Operation::parse(&case.expect.operation)
+            .unwrap_or_else(|| panic!("{}: unknown operation", case.name));
+        *by_operation
+            .entry(case.expect.operation.clone())
+            .or_default() += 1;
+
+        if operation.needs_target() {
+            let expected =
+                case.expect.target_name.as_deref().unwrap_or_else(|| {
+                    panic!("{}: target operation needs a target_name", case.name)
+                });
+            let matches: Vec<&super::decide::Candidate> = page
+                .candidates
+                .iter()
+                .filter(|candidate| candidate.name == expected)
+                .collect();
+            assert_eq!(
+                matches.len(),
+                1,
+                "{}: expected target {:?} must appear exactly once among candidates {:?}",
+                case.name,
+                expected,
+                page.candidates
+                    .iter()
+                    .map(|candidate| candidate.name.as_str())
+                    .collect::<Vec<_>>()
+            );
+            assert!(
+                matches[0].supports(operation),
+                "{}: target {:?} has role {} and cannot support {}",
+                case.name,
+                expected,
+                matches[0].role,
+                operation.as_str()
+            );
+            if operation.needs_value() {
+                if case.expect.blocked {
+                    assert!(
+                        case.values.is_empty(),
+                        "{}: blocked case must not supply values",
+                        case.name
+                    );
+                } else {
+                    assert!(
+                        !case.values.is_empty(),
+                        "{}: value operation must supply a value",
+                        case.name
+                    );
+                }
+            } else {
+                assert!(
+                    case.values.is_empty(),
+                    "{}: click case must not supply values",
+                    case.name
+                );
+            }
+            let request =
+                super::actions::act_request(&page, &case.instruction, &case.values, "validate");
+            let wait_offered = request
+                .questions
+                .get("operation")
+                .and_then(|question| question.get("criteria"))
+                .and_then(|criteria| criteria.get("wait"))
+                .is_some();
+            if wait_offered
+                && super::decide::instruction_names_candidate(&case.instruction, expected)
+            {
+                wait_leaks.push(case.name.clone());
+            }
+        } else {
+            assert!(
+                case.expect.target_name.is_none(),
+                "{}: targetless operation must not name a target",
+                case.name
+            );
+            assert!(
+                case.values.is_empty(),
+                "{}: targetless operation must not supply values",
+                case.name
+            );
+        }
+
+        if operation == super::decide::Operation::Wait {
+            let request =
+                super::actions::act_request(&page, &case.instruction, &case.values, "validate");
+            let wait_offered = request
+                .questions
+                .get("operation")
+                .and_then(|question| question.get("criteria"))
+                .and_then(|criteria| criteria.get("wait"))
+                .is_some();
+            assert!(
+                wait_offered,
+                "{}: wait must be offered for this instruction",
+                case.name
+            );
+        }
+    }
+
+    let _ = execute_command(
+        &json!({ "id": "validate-close", "action": "close" }),
+        &mut state,
+    )
+    .await;
+
+    assert!(
+        wait_leaks.is_empty(),
+        "wait must not be offered when the instruction names the expected target: {:?}",
+        wait_leaks
+    );
+
+    println!("validated {} cases", file.cases.len());
+    println!(
+        "destructive labels: {}",
+        file.cases
+            .iter()
+            .filter(|case| case.expect.destructive)
+            .count()
+    );
+    for (operation, count) in &by_operation {
+        println!("  {:<12} {}", operation, count);
+    }
+}
+
+#[test]
+fn eval_cases_path_defaults_and_honors_override() {
+    let default = eval_cases_path_from(None);
+    assert!(
+        default.ends_with("evals/decide/cases.json"),
+        "{}",
+        default.display()
+    );
+    assert!(default.is_file(), "{}", default.display());
+
+    let overridden = eval_cases_path_from(Some(std::ffi::OsString::from("/tmp/heldout.json")));
+    assert_eq!(overridden, std::path::PathBuf::from("/tmp/heldout.json"));
+
+    let cases = eval_cases_path_from(None);
+    let sibling = eval_fixture_path(&cases, "login.html");
+    assert!(sibling.is_file(), "{}", sibling.display());
+    let heldout = eval_fixture_path(&cases, "heldout_similar.html");
+    assert!(
+        heldout.ends_with("src/native/test_fixtures/heldout_similar.html"),
+        "{}",
+        heldout.display()
+    );
+}

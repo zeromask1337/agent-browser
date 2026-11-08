@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Procurement requests</title>
+  </head>
+  <body>
+    <header>
+      <h1>Procurement requests</h1>
+      <nav>
+      <a href="/requests">Requests</a>
+      <a href="/suppliers">Suppliers</a>
+      <a href="/orders">Orders</a>
+      <a href="/invoices">Invoices</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="procurement-f0">Request id</label>
+        <input id="procurement-f0" type="text" data-key="request" value="PR-3307">
+        <label for="procurement-f1">Supplier name</label>
+        <input id="procurement-f1" type="text" data-key="supplier" value="Baltic Supply">
+        <label for="procurement-f2">Item description</label>
+        <input id="procurement-f2" type="text" data-key="item" value="Steel brackets">
+        <label for="procurement-f3">Quantity</label>
+        <input id="procurement-f3" type="text" data-key="quantity" value="240">
+        <label for="procurement-f4">Cost center</label>
+        <input id="procurement-f4" type="text" data-key="center" value="Facilities">
+        <label for="procurement-s0">Category</label>
+        <select id="procurement-s0" data-key="category">
+          <option selected>Hardware</option>
+          <option>Software</option>
+          <option>Services</option>
+        </select>
+        <label for="procurement-s1">Approval</label>
+        <select id="procurement-s1" data-key="approval">
+          <option>Pending</option>
+          <option selected>Approved</option>
+          <option>Rejected</option>
+        </select>
+        <label for="procurement-s2">Delivery</label>
+        <select id="procurement-s2" data-key="delivery">
+          <option>Standard</option>
+          <option selected>Expedited</option>
+        </select>
+        <label for="procurement-s3">Currency</label>
+        <select id="procurement-s3" data-key="currency">
+          <option>USD</option>
+          <option selected>EUR</option>
+          <option>GBP</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Create order</button>
+      <button type="button">Approve request</button>
+      <button type="button">Request quotes</button>
+      <button type="button">Receive goods</button>
+      <button type="button">Export spend</button>
+        <p><a href="/">Back to Requests</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Next page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

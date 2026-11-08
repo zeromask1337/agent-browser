@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Survey builder</title>
+  </head>
+  <body>
+    <header>
+      <h1>Survey builder</h1>
+      <nav>
+      <a href="/surveys">Surveys</a>
+      <a href="/questions">Questions</a>
+      <a href="/responses">Responses</a>
+      <a href="/reports">Reports</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="survey_builder-f0">Survey title</label>
+        <input id="survey_builder-f0" type="text" data-key="title" value="Spring feedback">
+        <label for="survey_builder-f1">Question text</label>
+        <input id="survey_builder-f1" type="text" data-key="question" value="How was the event">
+        <label for="survey_builder-f2">Response limit</label>
+        <input id="survey_builder-f2" type="text" data-key="limit" value="500">
+        <label for="survey_builder-f3">Closing date</label>
+        <input id="survey_builder-f3" type="text" data-key="closing" value="2027-06-01">
+        <label for="survey_builder-f4">Owner name</label>
+        <input id="survey_builder-f4" type="text" data-key="owner" value="Ruth Meyer">
+        <label for="survey_builder-s0">Question type</label>
+        <select id="survey_builder-s0" data-key="question_type">
+          <option>Text</option>
+          <option>Choice</option>
+          <option selected>Rating</option>
+        </select>
+        <label for="survey_builder-s1">Audience</label>
+        <select id="survey_builder-s1" data-key="audience">
+          <option>Customers</option>
+          <option selected>Employees</option>
+          <option>Students</option>
+        </select>
+        <label for="survey_builder-s2">Survey status</label>
+        <select id="survey_builder-s2" data-key="survey_status">
+          <option>Draft</option>
+          <option selected>Live</option>
+          <option>Closed</option>
+        </select>
+        <label for="survey_builder-s3">Language</label>
+        <select id="survey_builder-s3" data-key="language">
+          <option>English</option>
+          <option selected>Spanish</option>
+          <option>French</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Add question</button>
+      <button type="button">Publish survey</button>
+      <button type="button">Preview survey</button>
+      <button type="button">Duplicate survey</button>
+      <button type="button">Export responses</button>
+        <p><a href="/">Back to Surveys</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Next page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

@@ -136,6 +136,7 @@ pub fn is_top_level_command(value: &str) -> bool {
             | "get"
             | "is"
             | "find"
+            | "act"
             | "mouse"
             | "set"
             | "network"
@@ -472,6 +473,7 @@ fn parse_command_inner(
         "forward" => Ok(json!({ "id": id, "action": "forward" })),
         "reload" => Ok(json!({ "id": id, "action": "reload" })),
         "read" => parse_read(&rest, &id, flags),
+        "act" => parse_act(&rest, &id),
         "webmcp" => parse_webmcp(&rest, &id),
         "flow" => parse_flow(&rest, &id),
 
@@ -3294,6 +3296,92 @@ fn parse_is(rest: &[&str], id: &str) -> Result<Value, ParseError> {
     }
 }
 
+fn parse_act(rest: &[&str], id: &str) -> Result<Value, ParseError> {
+    const ACT_USAGE: &str =
+        "act \"<instruction>\" [--dry-run] [--min-confidence <0..1>] [--value <key>=<value>]...";
+    let mut command = json!({ "id": id, "action": "act" });
+    let mut words: Vec<&str> = Vec::new();
+    let mut values = serde_json::Map::new();
+    let mut i = 0;
+    while i < rest.len() {
+        match rest[i] {
+            "--dry-run" => {
+                command["dryRun"] = json!(true);
+            }
+            "--min-confidence" => {
+                let raw = rest
+                    .get(i + 1)
+                    .ok_or_else(|| ParseError::MissingArguments {
+                        context: "act --min-confidence".to_string(),
+                        usage: ACT_USAGE,
+                    })?;
+                let value = raw.parse::<f64>().map_err(|_| ParseError::InvalidValue {
+                    message: format!("Invalid --min-confidence value: {}", raw),
+                    usage: ACT_USAGE,
+                })?;
+                if !(0.0..=1.0).contains(&value) {
+                    return Err(ParseError::InvalidValue {
+                        message: "--min-confidence must be between 0 and 1.".to_string(),
+                        usage: ACT_USAGE,
+                    });
+                }
+                command["minConfidence"] = json!(value);
+                i += 1;
+            }
+            "--value" => {
+                let raw = rest
+                    .get(i + 1)
+                    .ok_or_else(|| ParseError::MissingArguments {
+                        context: "act --value".to_string(),
+                        usage: ACT_USAGE,
+                    })?;
+                let (key, value) = raw
+                    .split_once('=')
+                    .ok_or_else(|| ParseError::InvalidValue {
+                        message: format!(
+                            "Invalid --value value: {}. Use --value <key>=<value>.",
+                            raw
+                        ),
+                        usage: ACT_USAGE,
+                    })?;
+                if key.trim().is_empty() {
+                    return Err(ParseError::InvalidValue {
+                        message: "--value needs a non-empty key.".to_string(),
+                        usage: ACT_USAGE,
+                    });
+                }
+                if values.insert(key.to_string(), json!(value)).is_some() {
+                    return Err(ParseError::InvalidValue {
+                        message: format!("Duplicate --value key: {}", key),
+                        usage: ACT_USAGE,
+                    });
+                }
+                i += 1;
+            }
+            arg if arg.starts_with("--") => {
+                return Err(ParseError::UnknownSubcommand {
+                    subcommand: arg.to_string(),
+                    valid_options: &["--dry-run", "--min-confidence", "--value"],
+                });
+            }
+            word => words.push(word),
+        }
+        i += 1;
+    }
+
+    if words.is_empty() {
+        return Err(ParseError::MissingArguments {
+            context: "act".to_string(),
+            usage: ACT_USAGE,
+        });
+    }
+    command["instruction"] = json!(words.join(" "));
+    if !values.is_empty() {
+        command["values"] = Value::Object(values);
+    }
+    Ok(command)
+}
+
 fn parse_find(rest: &[&str], id: &str) -> Result<Value, ParseError> {
     const VALID: &[&str] = &[
         "role",
@@ -4003,6 +4091,56 @@ mod tests {
 
     fn args(s: &str) -> Vec<String> {
         s.split_whitespace().map(String::from).collect()
+    }
+
+    #[test]
+    fn act_parses_instruction_and_values() {
+        let cmd = parse_command(
+            &[
+                "act",
+                "Fill the email field",
+                "--value",
+                "email=me@example.com",
+                "--value",
+                "password=",
+                "--min-confidence",
+                "0.7",
+                "--dry-run",
+            ]
+            .iter()
+            .map(|value| value.to_string())
+            .collect::<Vec<_>>(),
+            &default_flags(),
+        )
+        .unwrap();
+        assert_eq!(cmd["action"], "act");
+        assert_eq!(cmd["instruction"], "Fill the email field");
+        assert_eq!(cmd["values"]["email"], "me@example.com");
+        assert_eq!(cmd["values"]["password"], "");
+        assert_eq!(cmd["minConfidence"], 0.7);
+        assert_eq!(cmd["dryRun"], true);
+    }
+
+    #[test]
+    fn act_requires_an_instruction() {
+        let error = parse_command(&args("act"), &default_flags()).unwrap_err();
+        assert!(error.format().contains("act"));
+    }
+
+    #[test]
+    fn act_rejects_bad_confidence_and_values() {
+        assert!(parse_command(&args("act click --min-confidence 1.5"), &default_flags()).is_err());
+        assert!(parse_command(&args("act click --min-confidence nope"), &default_flags()).is_err());
+        assert!(parse_command(&args("act click --value nope"), &default_flags()).is_err());
+        assert!(parse_command(&args("act click --value =x"), &default_flags()).is_err());
+        assert!(
+            parse_command(&args("act click --value a=1 --value a=2"), &default_flags()).is_err()
+        );
+    }
+
+    #[test]
+    fn act_rejects_unknown_flags() {
+        assert!(parse_command(&args("act click --nope"), &default_flags()).is_err());
     }
 
     // === Cookies Tests ===

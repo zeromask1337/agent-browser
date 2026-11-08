@@ -117,6 +117,26 @@ pub(super) fn check(checks: &mut Vec<Check>) {
         );
     }
 
+    let typesafe_key_present = env::var("TYPESAFE_API_KEY").is_ok();
+    if typesafe_key_present {
+        checks.push(Check::new(
+            "providers.typesafe",
+            category,
+            Status::Info,
+            "TYPESAFE_API_KEY present (act with AGENT_BROWSER_DECIDER=jev)",
+        ));
+    } else {
+        checks.push(
+            Check::new(
+                "providers.typesafe",
+                category,
+                Status::Info,
+                "TYPESAFE_API_KEY not set (act with AGENT_BROWSER_DECIDER=jev disabled)",
+            )
+            .with_fix("export TYPESAFE_API_KEY=..."),
+        );
+    }
+
     if let Some(active) = active {
         checks.push(Check::new(
             "providers.active",

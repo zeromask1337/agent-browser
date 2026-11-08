@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Weekly timesheet</title>
+  </head>
+  <body>
+    <header>
+      <h1>Weekly timesheet</h1>
+      <nav>
+      <a href="/week">Week</a>
+      <a href="/projects">Projects</a>
+      <a href="/approvals">Approvals</a>
+      <a href="/reports">Reports</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="timesheet-f0">Employee name</label>
+        <input id="timesheet-f0" type="text" data-key="employee" value="Noah Grant">
+        <label for="timesheet-f1">Week ending</label>
+        <input id="timesheet-f1" type="text" data-key="week" value="2027-03-14">
+        <label for="timesheet-f2">Project name</label>
+        <input id="timesheet-f2" type="text" data-key="project" value="Atlas migration">
+        <label for="timesheet-f3">Hours</label>
+        <input id="timesheet-f3" type="text" data-key="hours" value="38">
+        <label for="timesheet-f4">Entry note</label>
+        <input id="timesheet-f4" type="text" data-key="note" value="Client workshops">
+        <label for="timesheet-s0">Project</label>
+        <select id="timesheet-s0" data-key="project_select">
+          <option>Atlas</option>
+          <option selected>Beacon</option>
+          <option>Cedar</option>
+        </select>
+        <label for="timesheet-s1">Task</label>
+        <select id="timesheet-s1" data-key="task">
+          <option>Design</option>
+          <option selected>Build</option>
+          <option>Test</option>
+        </select>
+        <label for="timesheet-s2">Timesheet status</label>
+        <select id="timesheet-s2" data-key="timesheet_status">
+          <option>Draft</option>
+          <option selected>Submitted</option>
+          <option>Approved</option>
+        </select>
+        <label for="timesheet-s3">Billable</label>
+        <select id="timesheet-s3" data-key="billable">
+          <option selected>Yes</option>
+          <option>No</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Submit timesheet</button>
+      <button type="button">Add entry</button>
+      <button type="button">Approve hours</button>
+      <button type="button">Copy last week</button>
+      <button type="button">Export hours</button>
+        <p><a href="/">Back to Week</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Previous page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

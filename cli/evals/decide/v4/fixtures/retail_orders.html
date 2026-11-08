@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Retail order desk</title>
+  </head>
+  <body>
+    <header>
+      <h1>Retail order desk</h1>
+      <nav>
+      <a href="/orders">Orders</a>
+      <a href="/returns">Returns</a>
+      <a href="/products">Products</a>
+      <a href="/customers">Customers</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="retail_orders-f0">Order number</label>
+        <input id="retail_orders-f0" type="text" data-key="order" value="R-90114">
+        <label for="retail_orders-f1">Customer name</label>
+        <input id="retail_orders-f1" type="text" data-key="customer" value="Eli Turner">
+        <label for="retail_orders-f2">Shipping city</label>
+        <input id="retail_orders-f2" type="text" data-key="city" value="Boise">
+        <label for="retail_orders-f3">Tracking number</label>
+        <input id="retail_orders-f3" type="text" data-key="tracking" value="1Z88A3">
+        <label for="retail_orders-f4">Gift note</label>
+        <input id="retail_orders-f4" type="text" data-key="note" value="Happy birthday">
+        <label for="retail_orders-s0">Carrier</label>
+        <select id="retail_orders-s0" data-key="carrier">
+          <option>UPS</option>
+          <option selected>FedEx</option>
+          <option>USPS</option>
+        </select>
+        <label for="retail_orders-s1">Order status</label>
+        <select id="retail_orders-s1" data-key="order_status">
+          <option>Paid</option>
+          <option selected>Packed</option>
+          <option>Shipped</option>
+        </select>
+        <label for="retail_orders-s2">Shipping</label>
+        <select id="retail_orders-s2" data-key="shipping">
+          <option>Standard</option>
+          <option selected>Express</option>
+          <option>Overnight</option>
+        </select>
+        <label for="retail_orders-s3">Payment</label>
+        <select id="retail_orders-s3" data-key="payment">
+          <option selected>Card</option>
+          <option>PayPal</option>
+          <option>Gift card</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Fulfill order</button>
+      <button type="button">Refund order</button>
+      <button type="button">Print packing slip</button>
+      <button type="button">Split order</button>
+      <button type="button">Export orders</button>
+        <p><a href="/">Back to Orders</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Next page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Harbor freight board</title>
+  </head>
+  <body>
+    <nav>
+      <a href="/loads">Loads</a>
+      <a href="/carriers">Carriers</a>
+      <a href="/invoices">Invoices</a>
+    </nav>
+    <h1>Open loads</h1>
+    <label for="q15">Origin city</label>
+    <input id="q15" type="search">
+    <button>Find loads</button>
+    <label for="q16">Trailer</label>
+    <select id="q16">
+          <option>Any trailer</option>
+          <option>Dry van</option>
+          <option>Reefer</option>
+          <option>Flatbed</option>
+        </select>
+    <label for="q17">Weight band</label>
+    <select id="q17">
+          <option>Any weight</option>
+          <option>Under 10k</option>
+          <option>10k to 20k</option>
+        </select>
+    <label for="q18">Sort by</label>
+    <select id="q18">
+          <option>Pickup date</option>
+          <option>Rate</option>
+          <option>Distance</option>
+        </select>
+    <input id="q19" type="checkbox">
+    <label for="q19">Team drivers only</label>
+    <button>Bid on load</button>
+    <a href="/load/42">Load details</a>
+    <button>Save search</button>
+    <button>Clear filters</button>
+    <button>Next page</button>
+    <div style="height: 1800px"> </div>
+    <a href="/requirements">Carrier requirements</a>
+  </body>
+</html>

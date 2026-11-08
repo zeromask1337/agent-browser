@@ -1,0 +1,146 @@
+{
+  "cases": [
+    {
+      "name": "similar-click-save-unpublished",
+      "fixture": "heldout_similar.html",
+      "instruction": "Save the profile edits without publishing them",
+      "expect": { "operation": "click", "target_name": "Save" }
+    },
+    {
+      "name": "similar-click-save-and-publish",
+      "fixture": "heldout_similar.html",
+      "instruction": "Save the profile and publish it right away",
+      "expect": { "operation": "click", "target_name": "Save and publish" }
+    },
+    {
+      "name": "similar-click-next-step",
+      "fixture": "heldout_similar.html",
+      "instruction": "Continue to the next step of the wizard",
+      "expect": { "operation": "click", "target_name": "Next step" }
+    },
+    {
+      "name": "similar-click-next-comments",
+      "fixture": "heldout_similar.html",
+      "instruction": "Go to the next page of customer comments",
+      "expect": { "operation": "click", "target_name": "Next" }
+    },
+    {
+      "name": "similar-click-back-link",
+      "fixture": "heldout_similar.html",
+      "instruction": "Return to the overview page from the header",
+      "expect": { "operation": "click", "target_name": "Back" }
+    },
+    {
+      "name": "similar-back-history",
+      "fixture": "heldout_similar.html",
+      "instruction": "Go back to the page I was on before this one",
+      "expect": { "operation": "back" }
+    },
+    {
+      "name": "similar-fill-contact-email",
+      "fixture": "heldout_similar.html",
+      "instruction": "Enter the contact email into the profile",
+      "values": { "email": "runner@example.com" },
+      "expect": { "operation": "fill", "target_name": "Contact email" }
+    },
+    {
+      "name": "similar-fill-display-name-no-value",
+      "fixture": "heldout_similar.html",
+      "instruction": "Type the new display name into the profile",
+      "expect": { "operation": "fill", "target_name": "Display name", "blocked": true }
+    },
+    {
+      "name": "similar-select-delivery-speed",
+      "fixture": "heldout_similar.html",
+      "instruction": "Set the delivery speed to express",
+      "values": { "pace": "Express" },
+      "expect": { "operation": "select", "target_name": "Delivery speed" }
+    },
+    {
+      "name": "loading-wait-upload-finish",
+      "fixture": "heldout_loading.html",
+      "instruction": "Wait for the report upload to finish",
+      "expect": { "operation": "wait" }
+    },
+    {
+      "name": "loading-wait-page-settles",
+      "fixture": "heldout_loading.html",
+      "instruction": "The page still shows a loading state, wait until it settles",
+      "expect": { "operation": "wait" }
+    },
+    {
+      "name": "loading-click-upload-history",
+      "fixture": "heldout_loading.html",
+      "instruction": "Open the upload history page",
+      "expect": { "operation": "click", "target_name": "View upload history" }
+    },
+    {
+      "name": "fold-click-approve-invoice",
+      "fixture": "heldout_fold.html",
+      "instruction": "Approve the pending invoice",
+      "expect": { "operation": "click", "target_name": "Approve invoice" }
+    },
+    {
+      "name": "fold-click-download-invoice",
+      "fixture": "heldout_fold.html",
+      "instruction": "Download the invoice PDF",
+      "expect": { "operation": "click", "target_name": "Download invoice" }
+    },
+    {
+      "name": "fold-fill-reason-no-value",
+      "fixture": "heldout_fold.html",
+      "instruction": "Enter a rejection reason for the invoice",
+      "expect": { "operation": "fill", "target_name": "Rejection reason", "blocked": true }
+    },
+    {
+      "name": "fold-scroll-down-queue",
+      "fixture": "heldout_fold.html",
+      "instruction": "Scroll down to the buttons at the end of the queue",
+      "expect": { "operation": "scroll_down" }
+    },
+    {
+      "name": "fold-scroll-up-heading",
+      "fixture": "heldout_fold.html",
+      "instruction": "Scroll back up to the invoice queue heading",
+      "expect": { "operation": "scroll_up" }
+    },
+    {
+      "name": "gift-fill-recipient",
+      "fixture": "heldout_gift.html",
+      "instruction": "Fill in the gift recipient name",
+      "values": { "recipient": "Sam Carter" },
+      "expect": { "operation": "fill", "target_name": "Recipient name" }
+    },
+    {
+      "name": "gift-select-wrap",
+      "fixture": "heldout_gift.html",
+      "instruction": "Wrap the gift in a linen box",
+      "values": { "wrap": "Linen box" },
+      "expect": { "operation": "select", "target_name": "Gift wrap" }
+    },
+    {
+      "name": "gift-click-payment",
+      "fixture": "heldout_gift.html",
+      "instruction": "Continue to payment",
+      "expect": { "operation": "click", "target_name": "Continue to payment" }
+    },
+    {
+      "name": "settings-click-save-display",
+      "fixture": "heldout_settings.html",
+      "instruction": "Save the display settings changes",
+      "expect": { "operation": "click", "target_name": "Save changes" }
+    },
+    {
+      "name": "settings-click-save-notifications",
+      "fixture": "heldout_settings.html",
+      "instruction": "Save the notification preferences",
+      "expect": { "operation": "click", "target_name": "Save notification settings" }
+    },
+    {
+      "name": "settings-click-discard-display",
+      "fixture": "heldout_settings.html",
+      "instruction": "Throw away the unsaved display changes",
+      "expect": { "operation": "click", "target_name": "Discard changes" }
+    }
+  ]
+}

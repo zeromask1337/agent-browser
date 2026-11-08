@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Logistics control tower</title>
+  </head>
+  <body>
+    <header>
+      <h1>Logistics control tower</h1>
+      <nav>
+      <a href="/shipments">Shipments</a>
+      <a href="/carriers">Carriers</a>
+      <a href="/routes">Routes</a>
+      <a href="/exceptions">Exceptions</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="logistics_hub-f0">Shipment id</label>
+        <input id="logistics_hub-f0" type="text" data-key="shipment" value="SH-44820">
+        <label for="logistics_hub-f1">Consignee name</label>
+        <input id="logistics_hub-f1" type="text" data-key="consignee" value="Apex Retail">
+        <label for="logistics_hub-f2">Pickup city</label>
+        <input id="logistics_hub-f2" type="text" data-key="city" value="Dayton">
+        <label for="logistics_hub-f3">Weight kg</label>
+        <input id="logistics_hub-f3" type="text" data-key="weight" value="1240">
+        <label for="logistics_hub-f4">Handling note</label>
+        <input id="logistics_hub-f4" type="text" data-key="note" value="Keep upright">
+        <label for="logistics_hub-s0">Service</label>
+        <select id="logistics_hub-s0" data-key="service">
+          <option>Ground</option>
+          <option selected>Air</option>
+          <option>Ocean</option>
+        </select>
+        <label for="logistics_hub-s1">Route</label>
+        <select id="logistics_hub-s1" data-key="route">
+          <option>North</option>
+          <option>South</option>
+          <option selected>Express</option>
+        </select>
+        <label for="logistics_hub-s2">Shipment status</label>
+        <select id="logistics_hub-s2" data-key="shipment_status">
+          <option>Ready</option>
+          <option selected>Held</option>
+          <option>In transit</option>
+        </select>
+        <label for="logistics_hub-s3">Packaging</label>
+        <select id="logistics_hub-s3" data-key="packaging">
+          <option>Pallet</option>
+          <option selected>Crate</option>
+          <option>Box</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Book pickup</button>
+      <button type="button">Split shipment</button>
+      <button type="button">Reroute load</button>
+      <button type="button">Print labels</button>
+      <button type="button">Release hold</button>
+        <p><a href="/">Back to Shipments</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Next page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

@@ -3545,6 +3545,7 @@ async fn execute_command_inner(cmd: &Value, state: &mut DaemonState) -> Value {
         "check" => handle_check(cmd, state).await,
         "uncheck" => handle_uncheck(cmd, state).await,
         "wait" => handle_wait(cmd, state).await,
+        "act" => handle_act(cmd, state).await,
         "gettext" => handle_gettext(cmd, state).await,
         "getattribute" => handle_getattribute(cmd, state).await,
         "isvisible" => handle_isvisible(cmd, state).await,
@@ -7506,6 +7507,433 @@ async fn handle_wait(cmd: &Value, state: &mut DaemonState) -> Result<Value, Stri
     // Just a timeout wait
     tokio::time::sleep(tokio::time::Duration::from_millis(timeout_ms)).await;
     Ok(json!({ "waited": "timeout", "ms": timeout_ms }))
+}
+
+/// A candidate page state captured before and after a decision.
+pub(crate) struct ActPage {
+    pub(crate) url: String,
+    pub(crate) title: String,
+    pub(crate) candidates: Vec<super::decide::Candidate>,
+    pub(crate) fingerprint: String,
+    pub(crate) truncated: bool,
+}
+
+pub(crate) async fn capture_act_page(state: &DaemonState) -> Result<ActPage, String> {
+    let mgr = state.browser.as_ref().ok_or("Browser not launched")?;
+    let session_id = mgr.active_session_id()?.to_string();
+    let url = mgr.get_url().await.unwrap_or_default();
+    let title = mgr.get_title().await.unwrap_or_default();
+    let by_backend = super::decide::probe_rendered_elements(&mgr.client, &session_id).await?;
+
+    let mut inputs = super::decide::candidate_inputs(&state.ref_map);
+    let mut rendered = std::collections::HashMap::new();
+    let mut rect_by_key = std::collections::HashMap::new();
+    for input in &mut inputs {
+        if let Some(element) = input
+            .backend_node_id
+            .and_then(|backend| by_backend.get(&backend).copied())
+        {
+            input.disabled = element.disabled;
+            input.opens_menu = element.opens_menu;
+            input.in_viewport = element.in_viewport;
+            rendered.insert(input.key.clone(), element.rect);
+            rect_by_key.insert(input.key.clone(), element.rect);
+        }
+    }
+
+    let set = super::decide::assemble_candidates(&inputs, &rendered, super::decide::MAX_CANDIDATES);
+    let fingerprint = super::decide::fingerprint(&url, &set.candidates);
+
+    Ok(ActPage {
+        url,
+        title,
+        candidates: set.candidates,
+        fingerprint,
+        truncated: set.truncated,
+    })
+}
+
+pub(crate) fn act_request(
+    page: &ActPage,
+    instruction: &str,
+    values: &serde_json::Map<String, Value>,
+    model: &str,
+) -> super::decide::DecisionRequest {
+    let value_keys: Vec<String> = values.keys().cloned().collect();
+    let input = super::decide::DecisionInput {
+        instruction: instruction.to_string(),
+        url: page.url.clone(),
+        title: page.title.clone(),
+        value_keys,
+        candidates: page.candidates.clone(),
+        truncated: page.truncated,
+    };
+    let ask_value = values.len() > 1;
+    super::decide::DecisionRequest::build(model, &input, ask_value)
+}
+
+async fn decide_for_page(
+    page: &ActPage,
+    instruction: &str,
+    values: &serde_json::Map<String, Value>,
+    decider: &dyn super::decide::Decider,
+) -> Result<super::decide::Decision, String> {
+    let request = act_request(page, instruction, values, decider.model());
+    super::decide::decide_with_retry(decider, &request)
+        .await
+        .map_err(|error| error.message())
+}
+
+/// Wall-clock time spent in each phase of one `act` step.
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct ActTiming {
+    pub(crate) capture_ms: u64,
+    pub(crate) decide_ms: u64,
+    pub(crate) fresh_check_ms: u64,
+    pub(crate) action_ms: u64,
+    pub(crate) total_ms: u64,
+}
+
+impl ActTiming {
+    fn to_json(&self) -> Value {
+        json!({
+            "captureMs": self.capture_ms,
+            "decideMs": self.decide_ms,
+            "freshCheckMs": self.fresh_check_ms,
+            "actionMs": self.action_ms,
+            "totalMs": self.total_ms,
+        })
+    }
+}
+
+fn act_result(
+    status: &str,
+    decision: &super::decide::Decision,
+    page: &ActPage,
+    value_key: Option<&str>,
+    dry_run: bool,
+    decider: &dyn super::decide::Decider,
+    action_result: Option<Value>,
+    timing: &ActTiming,
+) -> Value {
+    json!({
+        "status": status,
+        "operation": decision.operation.as_str(),
+        "target": decision.target,
+        "valueKey": value_key,
+        "confidence": decision.confidence,
+        "probabilities": decision.probabilities,
+        "fingerprint": page.fingerprint,
+        "dryRun": dry_run,
+        "decider": decider.name(),
+        "candidateCount": page.candidates.len(),
+        "candidatesTruncated": page.truncated,
+        "timings": timing.to_json(),
+        "result": action_result,
+    })
+}
+
+/// Move the pointer to the middle of the viewport so a hover overlay under the
+/// previous pointer position can close before a retried click.
+async fn park_pointer_for_retry(state: &mut DaemonState) -> Result<(), String> {
+    let (x, y) = {
+        let mgr = state.browser.as_ref().ok_or("Browser not launched")?;
+        let session_id = mgr.active_session_id()?.to_string();
+        let result: Value = mgr
+            .client
+            .send_command(
+                "Runtime.evaluate",
+                Some(json!({
+                    "expression": "[window.innerWidth, window.innerHeight]",
+                    "returnByValue": true,
+                })),
+                Some(&session_id),
+            )
+            .await?;
+        let size = result
+            .get("result")
+            .and_then(|r| r.get("value"))
+            .cloned()
+            .unwrap_or(Value::Null);
+        let width = size.get(0).and_then(Value::as_f64).unwrap_or(800.0);
+        let height = size.get(1).and_then(Value::as_f64).unwrap_or(600.0);
+        (width / 2.0, height / 2.0)
+    };
+    handle_mousemove(&json!({ "x": x, "y": y }), state).await?;
+    Ok(())
+}
+
+/// A blocked result for a precondition that failed before any decision existed.
+fn act_blocked_without_decision(
+    page: &ActPage,
+    reason: &str,
+    dry_run: bool,
+    decider: &dyn super::decide::Decider,
+    timing: &ActTiming,
+) -> Value {
+    json!({
+        "status": "blocked",
+        "operation": Value::Null,
+        "target": Value::Null,
+        "valueKey": Value::Null,
+        "confidence": 0.0,
+        "probabilities": {},
+        "fingerprint": page.fingerprint,
+        "dryRun": dry_run,
+        "decider": decider.name(),
+        "candidateCount": page.candidates.len(),
+        "candidatesTruncated": page.truncated,
+        "timings": timing.to_json(),
+        "result": Value::Null,
+        "reason": reason,
+    })
+}
+
+async fn run_act_subcommand(cmd: Value, state: &mut DaemonState) -> Result<Value, String> {
+    let response = execute_command(&cmd, state).await;
+    if response.get("success").and_then(Value::as_bool) == Some(true) {
+        Ok(response.get("data").cloned().unwrap_or(Value::Null))
+    } else {
+        Err(response
+            .get("error")
+            .and_then(Value::as_str)
+            .unwrap_or("The chosen action failed.")
+            .to_string())
+    }
+}
+
+/// Choose one operation and target, verify the page has not moved, then run it.
+pub(crate) async fn handle_act(cmd: &Value, state: &mut DaemonState) -> Result<Value, String> {
+    let decider = super::decide::decider_from_env()?;
+    handle_act_with(cmd, state, decider.as_ref()).await
+}
+
+pub(crate) async fn handle_act_with(
+    cmd: &Value,
+    state: &mut DaemonState,
+    decider: &dyn super::decide::Decider,
+) -> Result<Value, String> {
+    let instruction = cmd
+        .get("instruction")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if instruction.is_empty() {
+        return Err("Missing instruction. Usage: act \"<instruction>\"".to_string());
+    }
+
+    let values = cmd
+        .get("values")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
+    let dry_run = cmd.get("dryRun").and_then(Value::as_bool).unwrap_or(false);
+    let min_confidence = cmd.get("minConfidence").and_then(Value::as_f64);
+    if let Some(min) = min_confidence {
+        if !(0.0..=1.0).contains(&min) {
+            return Err("--min-confidence must be between 0 and 1.".to_string());
+        }
+    }
+
+    let started = std::time::Instant::now();
+    let mut timing = ActTiming::default();
+    let mut page = capture_act_page(state).await?;
+    timing.capture_ms = started.elapsed().as_millis() as u64;
+    if page.candidates.is_empty() {
+        timing.total_ms = started.elapsed().as_millis() as u64;
+        return Ok(act_blocked_without_decision(
+            &page,
+            "No rendered actionable candidates were offered. Run snapshot to refresh refs, then try again.",
+            dry_run,
+            decider,
+            &timing,
+        ));
+    }
+
+    let mut decision = decide_for_page(&page, &instruction, &values, decider).await?;
+    timing.decide_ms = started.elapsed().as_millis() as u64 - timing.capture_ms;
+
+    // Fresh-page check: decide once more if the page moved, then give up.
+    let fresh_started = std::time::Instant::now();
+    let after = capture_act_page(state).await?;
+    if after.fingerprint != page.fingerprint {
+        decision = decide_for_page(&after, &instruction, &values, decider).await?;
+        let final_page = capture_act_page(state).await?;
+        if final_page.fingerprint != after.fingerprint {
+            return Ok(act_result(
+                "stale",
+                &decision,
+                &final_page,
+                None,
+                dry_run,
+                decider,
+                None,
+                &timing,
+            ));
+        }
+        page = final_page;
+    } else {
+        page = after;
+    }
+    timing.fresh_check_ms = fresh_started.elapsed().as_millis() as u64;
+    timing.total_ms = started.elapsed().as_millis() as u64;
+
+    let value_key = decision.value_key.clone();
+    let needs_target = decision.operation.needs_target();
+    let selected = decision.target.clone();
+
+    let outcome = super::decide::proposal_outcome(
+        &decision,
+        decider.calibrated(),
+        min_confidence,
+        dry_run,
+        false,
+        false,
+    );
+    match outcome {
+        super::decide::ProposalOutcome::Execute => {}
+        super::decide::ProposalOutcome::Blocked => {
+            let mut result = act_result(
+                "blocked",
+                &decision,
+                &page,
+                value_key.as_deref(),
+                dry_run,
+                decider,
+                None,
+                &timing,
+            );
+            if let Some(reason) = decision.blocked_reason.as_deref() {
+                result["reason"] = json!(reason);
+            }
+            return Ok(result);
+        }
+        super::decide::ProposalOutcome::BelowThreshold => {
+            timing.total_ms = started.elapsed().as_millis() as u64;
+            return Ok(act_result(
+                "blocked",
+                &decision,
+                &page,
+                value_key.as_deref(),
+                dry_run,
+                decider,
+                None,
+                &timing,
+            ));
+        }
+        super::decide::ProposalOutcome::DryRun => {
+            timing.total_ms = started.elapsed().as_millis() as u64;
+            return Ok(act_result(
+                "dry_run",
+                &decision,
+                &page,
+                value_key.as_deref(),
+                true,
+                decider,
+                None,
+                &timing,
+            ));
+        }
+        super::decide::ProposalOutcome::Stale
+        | super::decide::ProposalOutcome::ConfirmationRequired => {
+            unreachable!("stale is handled above and confirmation is learned after execution")
+        }
+    }
+
+    let id = cmd
+        .get("id")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    let target = if needs_target {
+        let chosen = selected
+            .as_deref()
+            .ok_or("The decider chose an operation without a target.")?;
+        Some(format!("@{}", chosen))
+    } else {
+        None
+    };
+
+    let sub_action = match decision.operation {
+        super::decide::Operation::Click => {
+            json!({ "id": id, "action": "click", "selector": target })
+        }
+        super::decide::Operation::Fill => {
+            let key = value_key
+                .as_deref()
+                .ok_or("The decider chose fill without a supplied value.")?;
+            let value = values
+                .get(key)
+                .and_then(Value::as_str)
+                .ok_or("The chosen value key has no value.")?;
+            json!({ "id": id, "action": "fill", "selector": target, "value": value })
+        }
+        super::decide::Operation::Select => {
+            let key = value_key
+                .as_deref()
+                .ok_or("The decider chose select without a supplied value.")?;
+            let value = values
+                .get(key)
+                .and_then(Value::as_str)
+                .ok_or("The chosen value key has no value.")?;
+            json!({ "id": id, "action": "select", "selector": target, "values": [value] })
+        }
+        super::decide::Operation::ScrollDown => {
+            json!({ "id": id, "action": "scroll", "direction": "down", "amount": 600 })
+        }
+        super::decide::Operation::ScrollUp => {
+            json!({ "id": id, "action": "scroll", "direction": "up", "amount": 600 })
+        }
+        super::decide::Operation::Back => json!({ "id": id, "action": "back" }),
+        super::decide::Operation::Wait => json!({ "id": id, "action": "wait", "timeout": 500 }),
+    };
+
+    let action_started = std::time::Instant::now();
+    let action_result = match run_act_subcommand(sub_action.clone(), state).await {
+        Ok(result) => result,
+        // A hover overlay can open under the pointer while the decision is
+        // made, which leaves the chosen control covered. That is common on
+        // sites whose navigation opens a flyout on hover. Park the pointer in
+        // the middle of the page, let the overlay close, then try the same ref
+        // once more.
+        Err(error)
+            if decision.operation == super::decide::Operation::Click
+                && error.contains("is covered by") =>
+        {
+            park_pointer_for_retry(state).await?;
+            tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+            run_act_subcommand(sub_action, state).await?
+        }
+        Err(error) => return Err(error),
+    };
+    timing.action_ms = action_started.elapsed().as_millis() as u64;
+    timing.total_ms = started.elapsed().as_millis() as u64;
+    if let Some(pending) = action_result.get("confirmation_id").cloned() {
+        let mut result = act_result(
+            "blocked",
+            &decision,
+            &page,
+            value_key.as_deref(),
+            false,
+            decider,
+            Some(action_result),
+            &timing,
+        );
+        result["confirmation_required"] = json!(true);
+        result["confirmation_id"] = pending;
+        return Ok(result);
+    }
+    Ok(act_result(
+        "executed",
+        &decision,
+        &page,
+        value_key.as_deref(),
+        false,
+        decider,
+        Some(action_result),
+        &timing,
+    ))
 }
 
 async fn handle_gettext(cmd: &Value, state: &mut DaemonState) -> Result<Value, String> {

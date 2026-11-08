@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hotel operations desk</title>
+  </head>
+  <body>
+    <header>
+      <h1>Hotel operations desk</h1>
+      <nav>
+      <a href="/rooms">Rooms</a>
+      <a href="/housekeeping">Housekeeping</a>
+      <a href="/maintenance">Maintenance</a>
+      <a href="/guests">Guests</a>
+      </nav>
+    </header>
+    <main>
+      <section>
+        <h2>Record details</h2>
+        <form>
+        <label for="hotel_ops-f0">Room number</label>
+        <input id="hotel_ops-f0" type="text" data-key="room" value="412">
+        <label for="hotel_ops-f1">Guest name</label>
+        <input id="hotel_ops-f1" type="text" data-key="guest" value="Nora Blake">
+        <label for="hotel_ops-f2">Arrival date</label>
+        <input id="hotel_ops-f2" type="text" data-key="arrival" value="2027-02-19">
+        <label for="hotel_ops-f3">Special request</label>
+        <input id="hotel_ops-f3" type="text" data-key="request" value="Quiet floor">
+        <label for="hotel_ops-f4">Housekeeper name</label>
+        <input id="hotel_ops-f4" type="text" data-key="housekeeper" value="Mei Lin">
+        <label for="hotel_ops-s0">Room type</label>
+        <select id="hotel_ops-s0" data-key="room_type">
+          <option>Standard</option>
+          <option selected>Deluxe</option>
+          <option>Suite</option>
+        </select>
+        <label for="hotel_ops-s1">Room status</label>
+        <select id="hotel_ops-s1" data-key="room_status">
+          <option>Clean</option>
+          <option selected>Dirty</option>
+          <option>Inspecting</option>
+        </select>
+        <label for="hotel_ops-s2">Floor</label>
+        <select id="hotel_ops-s2" data-key="floor">
+          <option>Third</option>
+          <option selected>Fourth</option>
+          <option>Fifth</option>
+        </select>
+        <label for="hotel_ops-s3">Shift</label>
+        <select id="hotel_ops-s3" data-key="shift">
+          <option selected>Morning</option>
+          <option>Evening</option>
+          <option>Night</option>
+        </select>
+        </form>
+      </section>
+      <section>
+        <h2>Available actions</h2>
+      <button type="button">Mark clean</button>
+      <button type="button">Report damage</button>
+      <button type="button">Assign room</button>
+      <button type="button">Extend stay</button>
+      <button type="button">Print key card</button>
+        <p><a href="/">Back to Rooms</a></p>
+      </section>
+      <section>
+        <h2>Results</h2>
+        <p>Totals are refreshed after each change.</p>
+        <p><a href="/page/2">Previous page</a></p>
+      </section>
+    </main>
+    <div style="height: 1400px"> </div>
+    <footer>
+      <p>Footer totals and audit stamp</p>
+    </footer>
+  </body>
+</html>

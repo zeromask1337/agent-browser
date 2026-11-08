@@ -213,6 +213,19 @@ agent-browser find last ".item" click
 agent-browser find nth 2 "a" hover
 ```
 
+## Decide and run one step (act)
+
+```bash
+agent-browser snapshot -i
+agent-browser act "Click the Sign in button"
+agent-browser act "Fill the email field" --value email=me@example.com
+agent-browser act "Pick the shipping country" --value country=Germany
+agent-browser act "Click Submit" --dry-run
+agent-browser act "Click Submit" --min-confidence 0.8
+```
+
+`AGENT_BROWSER_DECIDER` is required: `jev` (needs `TYPESAFE_API_KEY`) or `llm` (needs `AI_GATEWAY_API_KEY`). The decider sees value key names but never values, and it can only return an offered ref. Status is `executed`, `blocked`, `stale`, or `dry_run`. Details: `references/act.md`.
+
 ## Browser Settings
 
 ```bash
@@ -521,6 +534,7 @@ Common tools include:
 - `agent_browser_open`
 - `agent_browser_snapshot`
 - `agent_browser_click`
+- `agent_browser_act`
 - `agent_browser_fill`
 - `agent_browser_type`
 - `agent_browser_press`
@@ -680,6 +694,11 @@ AGENT_BROWSER_DASHBOARD_ALLOWED_ORIGINS="https://dashboard.example.com" # Truste
 AGENT_BROWSER_CONFIG="./agent-browser.json"  # Custom config file
 AGENT_BROWSER_CDP="9222"                     # Connect daemon to CDP port or WebSocket URL
 AGENT_BROWSER_ALLOWED_DOMAINS="example.com"  # Restrict network domains; requires a fresh controllable browser context without profile/session startup args, restore/state replay, or direct-page provider plugins
+AGENT_BROWSER_DECIDER="jev"                  # Decider for act: jev or llm (required by act)
+AGENT_BROWSER_DECIDER_MODEL="anthropic/claude-sonnet-4.6"  # Model for the llm decider
+TYPESAFE_API_KEY="your-api-key"              # TypeSafe key for AGENT_BROWSER_DECIDER=jev
+TYPESAFE_MODEL="jev-latest"                  # TypeSafe model
+TYPESAFE_BASE_URL="https://api.typesafe.ai"  # TypeSafe base URL, or a local mock in tests
 AGENT_BROWSER_PLUGINS='[{"name":"vault","command":"agent-browser-plugin-vault","capabilities":["credential.read"]},{"name":"stealth","command":"agent-browser-plugin-stealth","capabilities":["launch.mutate"]}]'
 ```
 

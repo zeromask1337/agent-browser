@@ -337,6 +337,11 @@ These environment variables configure additional daemon and runtime behavior:
     <tr><td><code>AI_GATEWAY_URL</code></td><td>Vercel AI Gateway base URL.</td><td><code>https://ai-gateway.vercel.sh</code></td></tr>
     <tr><td><code>AI_GATEWAY_API_KEY</code></td><td>API key for the Vercel AI Gateway. Required to enable AI chat.</td><td>(none)</td></tr>
     <tr><td><code>AI_GATEWAY_MODEL</code></td><td>Default AI model for dashboard chat.</td><td><code>openai/gpt-6-luna-fast</code></td></tr>
+    <tr><td><code>AGENT_BROWSER_DECIDER</code></td><td>Decider for <code>act</code>: <code>jev</code> or <code>llm</code>. Unset is an error.</td><td>(none)</td></tr>
+    <tr><td><code>AGENT_BROWSER_DECIDER_MODEL</code></td><td>Model for the <code>llm</code> decider.</td><td><code>anthropic/claude-sonnet-4.6</code></td></tr>
+    <tr><td><code>TYPESAFE_API_KEY</code></td><td>TypeSafe API key. Required when <code>AGENT_BROWSER_DECIDER=jev</code>.</td><td>(none)</td></tr>
+    <tr><td><code>TYPESAFE_MODEL</code></td><td>TypeSafe model for <code>jev</code>.</td><td><code>jev-latest</code></td></tr>
+    <tr><td><code>TYPESAFE_BASE_URL</code></td><td>TypeSafe API base URL. Point it at a local mock in tests.</td><td><code>https://api.typesafe.ai</code></td></tr>
   </tbody>
 </table>
 

@@ -71,6 +71,7 @@ const TOOL_IS_VISIBLE: &str = "agent_browser_is_visible";
 const TOOL_IS_ENABLED: &str = "agent_browser_is_enabled";
 const TOOL_IS_CHECKED: &str = "agent_browser_is_checked";
 const TOOL_FIND: &str = "agent_browser_find";
+const TOOL_ACT: &str = "agent_browser_act";
 const TOOL_MOUSE_MOVE: &str = "agent_browser_mouse_move";
 const TOOL_MOUSE_DOWN: &str = "agent_browser_mouse_down";
 const TOOL_MOUSE_UP: &str = "agent_browser_mouse_up";
@@ -354,6 +355,7 @@ const CORE_PROFILE_TOOLS: &[&str] = &[
     TOOL_FORWARD,
     TOOL_RELOAD,
     TOOL_CLICK,
+    TOOL_ACT,
     TOOL_FILL,
     TOOL_TYPE,
     TOOL_PRESS,
@@ -1233,6 +1235,18 @@ fn parity_tools() -> Vec<Value> {
             "Check whether an element is checked.",
             json!({ "selector": selector_schema() }),
             &["selector"],
+        ),
+        tool(
+            TOOL_ACT,
+            "Act",
+            "Ask a decider to pick one operation and one rendered target from the current snapshot, then run it. Operations are click, fill, select, scroll_down, scroll_up, back, and wait; there is no done step. Requires a snapshot first. Elements outside the viewport are included because an action scrolls the chosen ref into view. If the decision needs a target or value that was not offered, or the chosen target's role cannot carry out the operation, it returns status blocked with a reason; a role mismatch gets one corrective retry first. The decider never sees input values, cookies, storage, or auth vault entries.",
+            json!({
+                "instruction": { "type": "string", "description": "One step, such as 'Click Sign in'." },
+                "dryRun": { "type": "boolean", "default": false, "description": "Return the proposal without running it." },
+                "minConfidence": { "type": "number", "minimum": 0, "maximum": 1, "description": "Block below this confidence. Applies to the jev decider only." },
+                "values": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Caller-supplied values keyed by name. The decider chooses which key goes where and never sees the values." }
+            }),
+            &["instruction"],
         ),
         tool(
             TOOL_FIND,
@@ -2499,6 +2513,7 @@ fn call_tool(params: Option<&Value>, config: &McpConfig) -> Result<Value, Protoc
         TOOL_IS_ENABLED => call_is(arguments, "enabled"),
         TOOL_IS_CHECKED => call_is(arguments, "checked"),
         TOOL_FIND => call_find(arguments),
+        TOOL_ACT => call_act(arguments),
         TOOL_MOUSE_MOVE => call_mouse_move(arguments),
         TOOL_MOUSE_DOWN => call_mouse_button(arguments, "down"),
         TOOL_MOUSE_UP => call_mouse_button(arguments, "up"),
@@ -3321,6 +3336,34 @@ fn call_is(arguments: &Value, what: &str) -> Result<Value, ProtocolError> {
         vec!["is".to_string(), what.to_string(), selector],
         None,
     )
+}
+
+fn act_command_args(arguments: &Value) -> Result<Vec<String>, ProtocolError> {
+    let instruction = required_string(arguments, "instruction")?;
+    let mut args = vec!["act".to_string(), instruction];
+    if optional_bool(arguments, "dryRun")?.unwrap_or(false) {
+        args.push("--dry-run".to_string());
+    }
+    if let Some(confidence) = optional_number_string(arguments, "minConfidence")? {
+        args.push("--min-confidence".to_string());
+        args.push(confidence);
+    }
+    if let Some(values) = arguments.get("values").and_then(|v| v.as_object()) {
+        for (key, value) in values {
+            let Some(value) = value.as_str() else {
+                return Err(ProtocolError::invalid_params(
+                    "values must map names to strings".to_string(),
+                ));
+            };
+            args.push("--value".to_string());
+            args.push(format!("{}={}", key, value));
+        }
+    }
+    Ok(args)
+}
+
+fn call_act(arguments: &Value) -> Result<Value, ProtocolError> {
+    call_cli_tool(arguments, act_command_args(arguments)?, None)
 }
 
 fn call_find(arguments: &Value) -> Result<Value, ProtocolError> {
@@ -5929,6 +5972,37 @@ mod tests {
 
         assert!(error.message.contains("Cannot use caCert with clearCaCert"));
         assert!(args.is_empty());
+    }
+
+    #[test]
+    fn act_tool_schema_and_command_args_match_cli_parser() {
+        let act = find_tool(TOOL_ACT).expect("act tool must be registered");
+        let props = act["inputSchema"]["properties"].as_object().unwrap();
+        assert!(props.contains_key("instruction"));
+        assert!(props.contains_key("dryRun"));
+        assert!(props.contains_key("minConfidence"));
+        assert_eq!(act["inputSchema"]["required"], json!(["instruction"]));
+
+        let args = act_command_args(&json!({
+            "instruction": "Fill the email field",
+            "dryRun": true,
+            "minConfidence": 0.6,
+            "values": { "email": "me@example.com" }
+        }))
+        .unwrap();
+        assert_eq!(
+            args,
+            vec![
+                "act",
+                "Fill the email field",
+                "--dry-run",
+                "--min-confidence",
+                "0.6",
+                "--value",
+                "email=me@example.com"
+            ]
+        );
+        assert!(McpConfig::core().allows(TOOL_ACT));
     }
 
     #[test]

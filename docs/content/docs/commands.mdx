@@ -136,6 +136,45 @@ agent-browser find last ".item" text
 agent-browser find nth 2 ".card" hover
 ```
 
+## Decide and run one step
+
+`act` asks a decider to choose one operation and one rendered target from the current snapshot, then runs that action. Run `snapshot` first so refs exist, and snapshot again after the page changes. Elements outside the viewport are included because an action scrolls the chosen ref into view before it runs.
+
+```bash
+agent-browser act "<instruction>" [--dry-run] [--min-confidence <0..1>] [--value <key>=<value>]...
+```
+
+The operation set is `click`, `fill`, `select`, `scroll_down`, `scroll_up`, `back`, and `wait`. There is no `done` operation: `act` is one caller-owned step, so a page that already shows the result is not a decision `act` makes. `back` is browser history; a visible Back, Return, or Previous control is a click target and is chosen only when the instruction names that control. A target is required for `click`, `fill`, and `select`. The decider can only return an offered ref, so an answer outside the candidate set runs nothing.
+
+Disabled elements are never offered: the `disabled` attribute, `aria-disabled="true"`, and controls inside a disabled fieldset are dropped before the decision. `click` is offered only for link, button, checkbox, radio, option, menuitem, tab, and a combobox that opens a menu. Textboxes and searchboxes take `fill`, so a click on one is blocked with a reason instead of running. A fill or select with no supplied value is blocked instead of turning into a click. A history request that does not name a visible control does not offer target-taking operations, so a nearby Return or Previous link cannot answer it. `wait` is offered only when the instruction asks to wait, settle, load, or wait for a condition to appear, or when no offered element matches a target named in the instruction.
+
+<table>
+  <thead>
+    <tr><th>Option</th><th>Effect</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>--dry-run</code></td><td>Return the proposal without running it. The status is <code>dry_run</code>.</td></tr>
+    <tr><td><code>--min-confidence &lt;n&gt;</code></td><td>Return status <code>blocked</code> when confidence is below <code>n</code>. Applies to the <code>jev</code> decider only, because the <code>llm</code> decider reports probabilities of 0 or 1.</td></tr>
+    <tr><td><code>--value &lt;key&gt;=&lt;value&gt;</code></td><td>Supply a value by name. Repeat for several values. The decider chooses which key goes where and never sees the value.</td></tr>
+  </tbody>
+</table>
+
+Examples:
+
+```bash
+agent-browser snapshot -i
+agent-browser act "Click the Sign in button"
+agent-browser act "Fill the email field" --value email=me@example.com
+agent-browser act "Choose the shipping country" --value country=Germany
+agent-browser act "Scroll down to the reviews"
+agent-browser act "Click Submit" --dry-run
+agent-browser act "Click Submit" --min-confidence 0.8
+```
+
+Set `AGENT_BROWSER_DECIDER` to `jev` or `llm`. There is no auto-selection. `jev` requires `TYPESAFE_API_KEY`; `llm` uses the same AI Gateway key as `chat`.
+
+The result reports `status`, `operation`, `target`, `valueKey`, `confidence`, `probabilities`, `fingerprint`, and `timings` (capture, decide, fresh check, action, and total milliseconds). Status is `executed`, `blocked`, or `stale`; `dry_run` is reported when no action ran. When the chosen operation needs a target or value that was not offered, or the chosen target's role cannot carry out the chosen operation, status is `blocked` and `reason` explains why. Nothing runs in that case, and a role mismatch gets one corrective retry before it is blocked. The target ref is checked again before it runs. If the page changed after the decision, `act` decides once more; if it changed again, it returns `stale` and runs nothing.
+
 ## Wait
 
 ```bash
