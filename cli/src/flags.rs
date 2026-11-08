@@ -344,6 +344,14 @@ fn env_var_is_truthy(name: &str) -> bool {
     }
 }
 
+/// Read a non-empty environment variable as a trimmed string.
+pub(crate) fn env_var_string(name: &str) -> Option<String> {
+    env::var(name)
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+}
+
 fn env_var_bool(name: &str) -> Option<bool> {
     env::var(name)
         .ok()

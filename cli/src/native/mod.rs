@@ -13,6 +13,8 @@ pub mod cookies;
 #[allow(dead_code)]
 pub mod daemon;
 #[allow(dead_code)]
+pub mod decide;
+#[allow(dead_code)]
 pub mod diff;
 #[allow(dead_code)]
 pub mod downloads;
