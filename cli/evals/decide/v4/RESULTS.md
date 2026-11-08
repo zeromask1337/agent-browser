@@ -19,8 +19,12 @@ Results commit: added after the run, docs only.
   validation test did not run in the same invocation. It had already passed
   440/440 before the freeze.
 - No case, fixture, instruction, label, candidate construction, prompt, or
-  criterion was changed after seeing these results. Only this document was
-  added after the run.
+  criterion was changed after seeing these results. Only this document and the
+  eval docs were added after the run.
+- One metric-only harness fix landed after the run: a non-blocked case that
+  returns a blocked reason now counts as decision-wrong. It cannot change this
+  result: all 414 non-blocked cases executed, the 26 blocked labels are exactly
+  the 26 blocked outcomes, and no case errored.
 - No case was excluded. The denominator is all 440 frozen cases.
 
 ### Aborted environment attempt

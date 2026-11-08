@@ -16785,6 +16785,28 @@ fn eval_percentile(sorted: &[f64], percentile: f64) -> f64 {
     sorted[index]
 }
 
+/// A decision is correct only when the operation and target match and the
+/// blocked status matches the label. A non-blocked case that returns a blocked
+/// reason is a utility failure, not a pass.
+fn eval_decision_is_correct(
+    operation_ok: bool,
+    target_ok: bool,
+    expected_blocked: bool,
+    has_blocked_reason: bool,
+) -> bool {
+    operation_ok && target_ok && expected_blocked == has_blocked_reason
+}
+
+#[test]
+fn eval_decision_status_must_match_the_label() {
+    assert!(eval_decision_is_correct(true, true, true, true));
+    assert!(!eval_decision_is_correct(true, true, true, false));
+    assert!(!eval_decision_is_correct(true, true, false, true));
+    assert!(eval_decision_is_correct(true, true, false, false));
+    assert!(!eval_decision_is_correct(false, true, false, false));
+    assert!(!eval_decision_is_correct(true, false, false, false));
+}
+
 #[tokio::test]
 #[ignore]
 async fn e2e_decide_eval() {
@@ -16884,7 +16906,12 @@ async fn e2e_decide_eval() {
                     None => true,
                 };
                 let blocked_ok = !case.expect.blocked || decision.blocked_reason.is_some();
-                let ok = operation_ok && target_ok && blocked_ok;
+                let ok = eval_decision_is_correct(
+                    operation_ok,
+                    target_ok,
+                    case.expect.blocked,
+                    decision.blocked_reason.is_some(),
+                );
                 // The runner does not execute proposals. It classifies them with
                 // the same gate `handle_act_with` uses, with dry-run and a moved
                 // page off, and the confidence floor at the act default of none.
