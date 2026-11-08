@@ -16963,8 +16963,8 @@ async fn e2e_decide_eval() {
     println!("\ndecider: {} ({})", counting.name(), counting.model());
     println!("cases: {}", total);
     println!(
-        "{:<34} | {:<12} | {:<20} | {:<28} | {:>6} | {}",
-        "case", "expected", "got", "target", "ms", "result"
+        "{:<34} | {:<12} | {:<20} | {:<28} | {:>6} | result",
+        "case", "expected", "got", "target", "ms"
     );
     for row in &rows {
         println!("{}", row);
