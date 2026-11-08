@@ -1,0 +1,182 @@
+{
+  "cases": [
+    {
+      "name": "login-click-sign-in",
+      "fixture": "login.html",
+      "instruction": "Click the Sign in button",
+      "expect": { "operation": "click", "target_name": "Sign in" }
+    },
+    {
+      "name": "login-click-create-account",
+      "fixture": "login.html",
+      "instruction": "Create a new account instead",
+      "expect": { "operation": "click", "target_name": "Create account" }
+    },
+    {
+      "name": "login-click-forgot-password",
+      "fixture": "login.html",
+      "instruction": "I forgot my password, open the reset page",
+      "expect": { "operation": "click", "target_name": "Forgot password" }
+    },
+    {
+      "name": "login-click-home",
+      "fixture": "login.html",
+      "instruction": "Go to the site home page",
+      "expect": { "operation": "click", "target_name": "Home" }
+    },
+    {
+      "name": "login-fill-email",
+      "fixture": "login.html",
+      "instruction": "Put the account email into the email field",
+      "values": { "email": "hiker@example.com" },
+      "expect": { "operation": "fill", "target_name": "Email address" }
+    },
+    {
+      "name": "login-fill-password",
+      "fixture": "login.html",
+      "instruction": "Enter the account password",
+      "values": { "password": "correct horse battery staple" },
+      "expect": { "operation": "fill", "target_name": "Password" }
+    },
+    {
+      "name": "login-wait-load",
+      "fixture": "login.html",
+      "instruction": "Wait for the page to finish loading",
+      "expect": { "operation": "wait" }
+    },
+    {
+      "name": "login-back",
+      "fixture": "login.html",
+      "instruction": "Go back to the previous page",
+      "expect": { "operation": "back" }
+    },
+    {
+      "name": "storefront-fill-search",
+      "fixture": "storefront.html",
+      "instruction": "Type the product query into the search box",
+      "values": { "query": "trail shoes" },
+      "expect": { "operation": "fill", "target_name": "Search products" }
+    },
+    {
+      "name": "storefront-fill-coupon",
+      "fixture": "storefront.html",
+      "instruction": "Enter the coupon code",
+      "values": { "coupon": "SAVE10" },
+      "expect": { "operation": "fill", "target_name": "Coupon code" }
+    },
+    {
+      "name": "storefront-select-sort",
+      "fixture": "storefront.html",
+      "instruction": "Sort the products by price from low to high",
+      "values": { "sort": "Price low to high" },
+      "expect": { "operation": "select", "target_name": "Sort by" }
+    },
+    {
+      "name": "storefront-select-country",
+      "fixture": "storefront.html",
+      "instruction": "Ship the order to Germany",
+      "values": { "country": "Germany" },
+      "expect": { "operation": "select", "target_name": "Ship to country" }
+    },
+    {
+      "name": "storefront-click-cart",
+      "fixture": "storefront.html",
+      "instruction": "Open the shopping cart",
+      "expect": { "operation": "click", "target_name": "Cart" }
+    },
+    {
+      "name": "storefront-click-apply-coupon",
+      "fixture": "storefront.html",
+      "instruction": "Apply the coupon to the order",
+      "expect": { "operation": "click", "target_name": "Apply coupon" }
+    },
+    {
+      "name": "storefront-wait",
+      "fixture": "storefront.html",
+      "instruction": "Wait until the page settles before continuing",
+      "expect": { "operation": "wait" }
+    },
+    {
+      "name": "results-click-next-page",
+      "fixture": "results.html",
+      "instruction": "Go to the next page of results",
+      "expect": { "operation": "click", "target_name": "Next page" }
+    },
+    {
+      "name": "results-click-previous-page",
+      "fixture": "results.html",
+      "instruction": "Go back to the previous page of results",
+      "expect": { "operation": "click", "target_name": "Previous page" }
+    },
+    {
+      "name": "results-click-search",
+      "fixture": "results.html",
+      "instruction": "Run the refined search",
+      "expect": { "operation": "click", "target_name": "Search" }
+    },
+    {
+      "name": "results-click-review",
+      "fixture": "results.html",
+      "instruction": "Open the Ridge Runner 2 review",
+      "expect": { "operation": "click", "target_name": "Ridge Runner 2 review" }
+    },
+    {
+      "name": "results-fill-refine",
+      "fixture": "results.html",
+      "instruction": "Narrow the results with a new query",
+      "values": { "query": "waterproof trail shoes" },
+      "expect": { "operation": "fill", "target_name": "Refine search" }
+    },
+    {
+      "name": "results-back",
+      "fixture": "results.html",
+      "instruction": "Return to the page before this one",
+      "expect": { "operation": "back" }
+    },
+    {
+      "name": "long-scroll-down",
+      "fixture": "long.html",
+      "instruction": "Scroll down to read more of the article",
+      "expect": { "operation": "scroll_down" }
+    },
+    {
+      "name": "long-scroll-up",
+      "fixture": "long.html",
+      "instruction": "Scroll back up toward the top",
+      "expect": { "operation": "scroll_up" }
+    },
+    {
+      "name": "long-click-reviews",
+      "fixture": "long.html",
+      "instruction": "Read the reviews",
+      "expect": { "operation": "click", "target_name": "Read the reviews" }
+    },
+    {
+      "name": "checkout-fill-name",
+      "fixture": "checkout.html",
+      "instruction": "Fill in the full name for delivery",
+      "values": { "name": "Alex Hiker" },
+      "expect": { "operation": "fill", "target_name": "Full name" }
+    },
+    {
+      "name": "checkout-select-size",
+      "fixture": "checkout.html",
+      "instruction": "Choose shoe size 42",
+      "values": { "size": "42" },
+      "expect": { "operation": "select", "target_name": "Shoe size" }
+    },
+    {
+      "name": "checkout-select-quantity",
+      "fixture": "checkout.html",
+      "instruction": "Order two pairs",
+      "values": { "quantity": "2" },
+      "expect": { "operation": "select", "target_name": "Quantity" }
+    },
+    {
+      "name": "checkout-click-order",
+      "fixture": "checkout.html",
+      "instruction": "Place the order now",
+      "expect": { "operation": "click", "target_name": "Place order" }
+    }
+  ]
+}

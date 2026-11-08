@@ -1309,7 +1309,7 @@ mod tests {
         }
     }
 
-    fn answer(head: &str, choice: &str, probabilities: Value) -> Value {
+    fn answer(_head: &str, choice: &str, probabilities: Value) -> Value {
         json!({
             "type": "choice",
             "choice": choice,
@@ -1318,7 +1318,7 @@ mod tests {
         })
     }
 
-    fn valid_answers(request: &DecisionRequest) -> Value {
+    fn valid_answers(_request: &DecisionRequest) -> Value {
         json!({
             "operation": answer("operation", "click", json!({
                 "click": 0.9, "fill": 0.0, "select": 0.0, "scroll_down": 0.0,
@@ -1518,7 +1518,7 @@ mod tests {
         }
 
         async fn decide(&self, _request: &DecisionRequest) -> Result<DeciderResponse, DecideError> {
-            let index = self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             let mut queue = self.answers.lock().unwrap();
             let next = if queue.is_empty() {
                 return Err(DecideError::Protocol);

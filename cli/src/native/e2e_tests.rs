@@ -16588,3 +16588,272 @@ async fn e2e_act_with_stub_decider_clicks_offered_ref() {
 
     let _ = execute_command(&json!({ "id": "6", "action": "close" }), &mut state).await;
 }
+
+#[derive(serde::Deserialize)]
+struct EvalFile {
+    cases: Vec<EvalCase>,
+}
+
+#[derive(serde::Deserialize)]
+struct EvalCase {
+    name: String,
+    fixture: String,
+    instruction: String,
+    #[serde(default)]
+    values: serde_json::Map<String, Value>,
+    expect: EvalExpect,
+}
+
+#[derive(serde::Deserialize)]
+struct EvalExpect {
+    operation: String,
+    target_name: Option<String>,
+}
+
+struct CountingDecider<'a> {
+    inner: &'a dyn super::decide::Decider,
+    input_tokens: std::sync::atomic::AtomicU64,
+    output_tokens: std::sync::atomic::AtomicU64,
+}
+
+#[async_trait::async_trait]
+impl super::decide::Decider for CountingDecider<'_> {
+    fn name(&self) -> &'static str {
+        self.inner.name()
+    }
+
+    fn model(&self) -> &str {
+        self.inner.model()
+    }
+
+    fn calibrated(&self) -> bool {
+        self.inner.calibrated()
+    }
+
+    async fn decide(
+        &self,
+        request: &super::decide::DecisionRequest,
+    ) -> Result<super::decide::DeciderResponse, super::decide::DecideError> {
+        let response = self.inner.decide(request).await?;
+        use std::sync::atomic::Ordering;
+        if let Some(tokens) = response.input_tokens {
+            self.input_tokens.fetch_add(tokens, Ordering::SeqCst);
+        }
+        if let Some(tokens) = response.output_tokens {
+            self.output_tokens.fetch_add(tokens, Ordering::SeqCst);
+        }
+        Ok(response)
+    }
+}
+
+fn eval_percentile(sorted: &[f64], percentile: f64) -> f64 {
+    if sorted.is_empty() {
+        return 0.0;
+    }
+    let index = ((sorted.len() as f64 * percentile).ceil() as usize)
+        .saturating_sub(1)
+        .min(sorted.len() - 1);
+    sorted[index]
+}
+
+#[tokio::test]
+#[ignore]
+async fn e2e_decide_eval() {
+    use super::decide::Decider as _;
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("evals")
+        .join("decide")
+        .join("cases.json");
+    let raw = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("cannot read {}: {}", path.display(), error));
+    let file: EvalFile = serde_json::from_str(&raw).expect("cases.json must parse");
+
+    let decider = super::decide::decider_from_env().expect("set AGENT_BROWSER_DECIDER and its key");
+    let counting = CountingDecider {
+        inner: decider.as_ref(),
+        input_tokens: std::sync::atomic::AtomicU64::new(0),
+        output_tokens: std::sync::atomic::AtomicU64::new(0),
+    };
+
+    let mut state = DaemonState::new();
+    assert_success(
+        &execute_command(
+            &json!({ "id": "eval-launch", "action": "launch", "headless": true }),
+            &mut state,
+        )
+        .await,
+    );
+
+    let fixture_dir = path.parent().unwrap().join("fixtures");
+    let mut correct = 0usize;
+    let mut wrong_actions = 0usize;
+    let mut errors = 0usize;
+    let mut latencies: Vec<f64> = Vec::new();
+    let mut calls = 0u64;
+    let mut rows: Vec<String> = Vec::new();
+
+    for (index, case) in file.cases.iter().enumerate() {
+        let html = std::fs::read_to_string(fixture_dir.join(&case.fixture))
+            .unwrap_or_else(|error| panic!("cannot read fixture {}: {}", case.fixture, error));
+        let url = format!("data:text/html;base64,{}", STANDARD.encode(html));
+        let nav = execute_command(
+            &json!({ "id": format!("eval-nav-{index}"), "action": "navigate", "url": url }),
+            &mut state,
+        )
+        .await;
+        if !nav.get("success").and_then(Value::as_bool).unwrap_or(false) {
+            errors += 1;
+            wrong_actions += 1;
+            rows.push(format!(
+                "{} | {} | navigation failed | - | - | FAIL",
+                case.name, case.expect.operation
+            ));
+            continue;
+        }
+        assert_success(
+            &execute_command(
+                &json!({ "id": format!("eval-snapshot-{index}"), "action": "snapshot", "interactive": true }),
+                &mut state,
+            )
+            .await,
+        );
+
+        let page = super::actions::capture_act_page(&state)
+            .await
+            .unwrap_or_else(|error| panic!("{}: {}", case.name, error));
+        let request =
+            super::actions::act_request(&page, &case.instruction, &case.values, counting.model());
+
+        let before_in = counting
+            .input_tokens
+            .load(std::sync::atomic::Ordering::SeqCst);
+        let started = std::time::Instant::now();
+        let decision = super::decide::decide_with_retry(&counting, &request).await;
+        let elapsed_ms = started.elapsed().as_secs_f64() * 1000.0;
+        latencies.push(elapsed_ms);
+        calls += 1;
+        let input_tokens = counting
+            .input_tokens
+            .load(std::sync::atomic::Ordering::SeqCst)
+            .saturating_sub(before_in);
+
+        match decision {
+            Ok(decision) => {
+                let operation_ok = decision.operation.as_str() == case.expect.operation;
+                let target_name = decision.target.as_ref().and_then(|key| {
+                    page.candidates
+                        .iter()
+                        .find(|candidate| &candidate.key == key)
+                        .map(|candidate| candidate.name.clone())
+                });
+                let target_ok = match &case.expect.target_name {
+                    Some(expected) => target_name.as_deref() == Some(expected.as_str()),
+                    None => true,
+                };
+                let ok = operation_ok && target_ok;
+                if ok {
+                    correct += 1;
+                } else {
+                    wrong_actions += 1;
+                }
+                rows.push(format!(
+                    "{} | {} | {}{} | {} | {:.0} | {}",
+                    case.name,
+                    case.expect.operation,
+                    decision.operation.as_str(),
+                    if operation_ok { "" } else { " (wrong op)" },
+                    target_name.unwrap_or_else(|| "-".to_string()),
+                    elapsed_ms,
+                    if ok { "ok" } else { "FAIL" }
+                ));
+                if input_tokens > 0 {
+                    rows.last_mut()
+                        .unwrap()
+                        .push_str(&format!(" [{} tok]", input_tokens));
+                }
+            }
+            Err(error) => {
+                errors += 1;
+                wrong_actions += 1;
+                rows.push(format!(
+                    "{} | {} | error: {} | - | {:.0} | FAIL",
+                    case.name,
+                    case.expect.operation,
+                    error.message(),
+                    elapsed_ms
+                ));
+            }
+        }
+    }
+
+    let _ = execute_command(
+        &json!({ "id": "eval-close", "action": "close" }),
+        &mut state,
+    )
+    .await;
+
+    let total = file.cases.len();
+    let mut sorted = latencies.clone();
+    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let accuracy = if total == 0 {
+        0.0
+    } else {
+        correct as f64 / total as f64 * 100.0
+    };
+    let total_input = counting
+        .input_tokens
+        .load(std::sync::atomic::Ordering::SeqCst);
+    let total_output = counting
+        .output_tokens
+        .load(std::sync::atomic::Ordering::SeqCst);
+
+    println!("\ndecider: {} ({})", counting.name(), counting.model());
+    println!("cases: {}", total);
+    println!(
+        "{:<34} | {:<12} | {:<20} | {:<28} | {:>6} | {}",
+        "case", "expected", "got", "target", "ms", "result"
+    );
+    for row in &rows {
+        println!("{}", row);
+    }
+    println!("\ntop-1 accuracy: {:.1}% ({}/{})", accuracy, correct, total);
+    println!(
+        "wrong actions: {} ({:.1}%), errors: {}",
+        wrong_actions,
+        if total == 0 {
+            0.0
+        } else {
+            wrong_actions as f64 / total as f64 * 100.0
+        },
+        errors
+    );
+    println!(
+        "decide latency: p50 {:.0} ms, p95 {:.0} ms, max {:.0} ms",
+        eval_percentile(&sorted, 0.50),
+        eval_percentile(&sorted, 0.95),
+        sorted.last().copied().unwrap_or(0.0)
+    );
+    if total_input > 0 || total_output > 0 {
+        println!(
+            "tokens per call: {:.0} input, {:.0} output ({} calls)",
+            total_input as f64 / calls.max(1) as f64,
+            total_output as f64 / calls.max(1) as f64,
+            calls
+        );
+    } else {
+        println!("tokens per call: not reported by this provider");
+    }
+    println!(
+        "gates: wrong actions under 1%: {}; p50 under 1000 ms: {}",
+        if total > 0 && (wrong_actions as f64) / (total as f64) < 0.01 {
+            "pass"
+        } else {
+            "fail"
+        },
+        if eval_percentile(&sorted, 0.50) < 1000.0 {
+            "pass"
+        } else {
+            "fail"
+        }
+    );
+}

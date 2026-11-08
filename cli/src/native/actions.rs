@@ -7510,15 +7510,15 @@ async fn handle_wait(cmd: &Value, state: &mut DaemonState) -> Result<Value, Stri
 }
 
 /// A candidate page state captured before and after a decision.
-struct ActPage {
-    url: String,
-    title: String,
-    candidates: Vec<super::decide::Candidate>,
-    fingerprint: String,
-    truncated: bool,
+pub(crate) struct ActPage {
+    pub(crate) url: String,
+    pub(crate) title: String,
+    pub(crate) candidates: Vec<super::decide::Candidate>,
+    pub(crate) fingerprint: String,
+    pub(crate) truncated: bool,
 }
 
-async fn capture_act_page(state: &DaemonState) -> Result<ActPage, String> {
+pub(crate) async fn capture_act_page(state: &DaemonState) -> Result<ActPage, String> {
     let mgr = state.browser.as_ref().ok_or("Browser not launched")?;
     let session_id = mgr.active_session_id()?.to_string();
     let url = mgr.get_url().await.unwrap_or_default();
@@ -7550,12 +7550,12 @@ async fn capture_act_page(state: &DaemonState) -> Result<ActPage, String> {
     })
 }
 
-async fn decide_for_page(
+pub(crate) fn act_request(
     page: &ActPage,
     instruction: &str,
     values: &serde_json::Map<String, Value>,
-    decider: &dyn super::decide::Decider,
-) -> Result<super::decide::Decision, String> {
+    model: &str,
+) -> super::decide::DecisionRequest {
     let value_keys: Vec<String> = values.keys().cloned().collect();
     let input = super::decide::DecisionInput {
         instruction: instruction.to_string(),
@@ -7566,7 +7566,16 @@ async fn decide_for_page(
         truncated: page.truncated,
     };
     let ask_value = values.len() > 1;
-    let request = super::decide::DecisionRequest::build(decider.model(), &input, ask_value);
+    super::decide::DecisionRequest::build(model, &input, ask_value)
+}
+
+async fn decide_for_page(
+    page: &ActPage,
+    instruction: &str,
+    values: &serde_json::Map<String, Value>,
+    decider: &dyn super::decide::Decider,
+) -> Result<super::decide::Decision, String> {
+    let request = act_request(page, instruction, values, decider.model());
     super::decide::decide_with_retry(decider, &request)
         .await
         .map_err(|error| error.message())
