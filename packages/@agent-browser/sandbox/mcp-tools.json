@@ -39,6 +39,52 @@
         "openWorldHint": true,
         "readOnlyHint": false
       },
+      "description": "Ask a decider to pick one operation and one visible target from the current snapshot, then run it. Requires a snapshot first. The decider never sees input values, cookies, storage, or auth vault entries.",
+      "inputSchema": {
+        "properties": {
+          "dryRun": {
+            "default": false,
+            "description": "Return the proposal without running it.",
+            "type": "boolean"
+          },
+          "instruction": {
+            "description": "One step, such as 'Click Sign in'.",
+            "type": "string"
+          },
+          "minConfidence": {
+            "description": "Block below this confidence. Applies to the jev decider only.",
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "session": {
+            "description": "Isolated browser session name: Unicode letters, numbers, hyphens, and underscores.",
+            "type": "string"
+          },
+          "values": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Caller-supplied values keyed by name. The decider chooses which key goes where and never sees the values.",
+            "type": "object"
+          }
+        },
+        "required": [
+          "instruction"
+        ],
+        "type": "object"
+      },
+      "name": "agent_browser_act",
+      "profiles": [
+        "core"
+      ],
+      "title": "Act"
+    },
+    {
+      "annotations": {
+        "openWorldHint": true,
+        "readOnlyHint": false
+      },
       "description": "Delete an auth profile.",
       "inputSchema": {
         "properties": {
