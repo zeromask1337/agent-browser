@@ -18,6 +18,19 @@ AI_GATEWAY_API_KEY=... AGENT_BROWSER_DECIDER=llm \
   cargo test e2e_decide_eval -- --ignored --nocapture
 ```
 
+The runner reads `cases.json` by default. Point it at another file with `AGENT_BROWSER_DECIDE_CASES`:
+
+```bash
+cd cli
+TYPESAFE_API_KEY=... AGENT_BROWSER_DECIDER=jev \
+  AGENT_BROWSER_DECIDE_CASES=evals/decide/cases-heldout.json \
+  cargo test e2e_decide_eval -- --ignored --nocapture --test-threads=1
+```
+
+Fixtures resolve from `fixtures/` beside the cases file first, then from `src/native/test_fixtures/`, so a cases file can share the native test fixture pages.
+
+`cases-heldout.json` is a separate held-out set. It was written and labeled before any live run and was not used to tune prompts, criteria, or labels.
+
 The runner launches one headless Chrome, loads each fixture as a data URL, snapshots it, builds the same candidate list `act` uses, and asks the decider once per case. It prints a per-case table and these numbers:
 
 - Top-1 accuracy: operation and target both correct.
@@ -52,3 +65,5 @@ Add a fixture under `fixtures/`, then add an entry to `cases.json`:
 ```
 
 `target_name` is the accessible name shown in a snapshot. Omit it for operations that do not take a target: `scroll_down`, `scroll_up`, `back`, `wait`, and `done`.
+
+Set `expect.blocked` to `true` when the correct operation needs a value the caller did not supply. The decision then passes only when it is blocked, not when it is an error.
