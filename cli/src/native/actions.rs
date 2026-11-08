@@ -7534,6 +7534,7 @@ pub(crate) async fn capture_act_page(state: &DaemonState) -> Result<ActPage, Str
             .and_then(|backend| by_backend.get(&backend).copied())
         {
             input.disabled = element.disabled;
+            input.opens_menu = element.opens_menu;
             rendered.insert(input.key.clone(), element.rect);
             rect_by_key.insert(input.key.clone(), element.rect);
         }

@@ -126,14 +126,17 @@ impl Operation {
 
 fn operation_criteria() -> Value {
     let mut criteria = Map::new();
-    criteria.insert("click".to_string(), json!("Click the target element once."));
+    criteria.insert(
+        "click".to_string(),
+        json!("Click the target element once. Only link, button, checkbox, radio, option, menuitem, tab, and a combobox that opens a menu activate on click. A textbox or searchbox takes text, so it is never clicked."),
+    );
     criteria.insert(
         "fill".to_string(),
-        json!("Enter one caller-supplied value into the target field. Choose fill only when value_keys names a value to enter."),
+        json!("Enter one caller-supplied value into the target text field: a textbox, searchbox, or editable combobox. Choose fill only when value_keys names a value to enter. A fill with no supplied value is blocked and is never turned into a click."),
     );
     criteria.insert(
         "select".to_string(),
-        json!("Choose one caller-supplied value in the target dropdown. Choose select only when value_keys names a value to choose."),
+        json!("Choose one caller-supplied value in the target dropdown, which is a combobox or listbox. Choose select only when value_keys names a value to choose."),
     );
     criteria.insert(
         "scroll_down".to_string(),
@@ -168,6 +171,32 @@ pub struct Candidate {
     /// Index among candidates that share the same role and name.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub nth: Option<usize>,
+    /// True when a click activates the element. Links, buttons, checkboxes,
+    /// radios, options, menu items, and tabs activate; text fields do not.
+    #[serde(default)]
+    pub activates: bool,
+}
+
+/// Whether a click activates an element with this role.
+///
+/// A textbox or searchbox takes text, so it is never a click target. A
+/// combobox counts only when it opens a menu, which means it is being used as a
+/// button rather than as a value field.
+pub fn role_activates_on_click(role: &str, opens_menu: bool) -> bool {
+    matches!(
+        role,
+        "link" | "button" | "checkbox" | "radio" | "option" | "menuitem" | "tab"
+    ) || (role == "combobox" && opens_menu)
+}
+
+/// Whether an operation may act on a candidate with this role.
+pub fn operation_supports_role(operation: Operation, role: &str, activates: bool) -> bool {
+    match operation {
+        Operation::Click => activates,
+        Operation::Fill => matches!(role, "textbox" | "searchbox" | "combobox"),
+        Operation::Select => matches!(role, "combobox" | "listbox"),
+        _ => false,
+    }
 }
 
 impl Candidate {
@@ -182,6 +211,17 @@ impl Candidate {
             Some(nth) => format!("role {} named {:?}, occurrence {}", self.role, name, nth),
             None => format!("role {} named {:?}", self.role, name),
         }
+    }
+
+    /// Whether this element can carry out the operation.
+    pub fn supports(&self, operation: Operation) -> bool {
+        operation_supports_role(operation, &self.role, self.activates)
+    }
+}
+
+impl CandidateInput {
+    fn activates_on_click(&self) -> bool {
+        role_activates_on_click(&self.role, self.opens_menu)
     }
 }
 
@@ -200,6 +240,10 @@ pub struct CandidateInput {
     /// `aria-disabled="true"`, or a disabled fieldset ancestor. A disabled
     /// control cannot be activated or edited, so it is never offered.
     pub disabled: bool,
+    /// True when the element opens a popup menu rather than an inline listbox.
+    /// A combobox is click-activatable only in this case: it is used as a
+    /// button, not as a value field.
+    pub opens_menu: bool,
 }
 
 /// Viewport-relative rectangle in CSS pixels.
@@ -246,6 +290,7 @@ pub fn assemble_candidates(
             role: input.role.clone(),
             name: input.name.clone(),
             nth: input.nth,
+            activates: input.activates_on_click(),
         })
         .collect();
 
@@ -290,6 +335,9 @@ pub struct RenderedElement {
     /// True for the `disabled` attribute, `aria-disabled="true"`, or an
     /// element inside a disabled fieldset.
     pub disabled: bool,
+    /// True when the element opens a popup menu rather than a listbox. This
+    /// tells a combobox used as a button from a combobox used as a value field.
+    pub opens_menu: bool,
 }
 
 /// Read every element's viewport rectangle and disabled state in one page
@@ -327,7 +375,15 @@ pub async fn probe_rendered_elements(
             var aria = el.getAttribute('aria-disabled');
             disabled = aria !== null && aria.toLowerCase() === 'true';
         }
-        out.push({ x: r.x, y: r.y, w: r.width, h: r.height, rendered: rendered, disabled: disabled });
+        // A combobox that opens a menu is being used as a button. A native
+        // select or a listbox popup stays a value field.
+        var opensMenu = false;
+        if (el.getAttribute) {
+            var popup = (el.getAttribute('aria-haspopup') || '').toLowerCase();
+            opensMenu = (el.tagName || '').toUpperCase() === 'BUTTON' ||
+                popup === 'menu' || popup === 'dialog' || popup === 'tree' || popup === 'grid';
+        }
+        out.push({ x: r.x, y: r.y, w: r.width, h: r.height, rendered: rendered, disabled: disabled, opensMenu: opensMenu });
     }
     return out;
 })()
@@ -409,6 +465,10 @@ fn collect_tagged_elements(node: &Value, rects: &[Value], out: &mut HashMap<i64,
                                 .get("disabled")
                                 .and_then(|v| v.as_bool())
                                 .unwrap_or(false),
+                            opens_menu: rect
+                                .get("opensMenu")
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(false),
                         },
                     );
                 }
@@ -438,6 +498,7 @@ pub fn candidate_inputs(ref_map: &super::element::RefMap) -> Vec<CandidateInput>
             backend_node_id: entry.backend_node_id,
             frame_id: entry.frame_id,
             disabled: false,
+            opens_menu: false,
         })
         .collect()
 }
@@ -475,6 +536,7 @@ impl DecisionRequest {
                     "name": candidate.name,
                     "nth": candidate.nth,
                     "position": position,
+                    "activates": candidate.activates,
                 }),
             );
         }
@@ -492,7 +554,7 @@ impl DecisionRequest {
             "operation".to_string(),
             json!({
                 "type": "choice",
-                "instructions": "Which single operation should be performed next to satisfy the instruction? Choose click, fill, or select only when the instruction acts on an offered element. Choose fill or select only when value_keys lists a value. Choose scroll_down or scroll_up when the instruction asks to scroll, even if a link with a matching name is offered. Choose wait when the instruction asks to wait or the page is still loading. Choose done only when the page already shows the result and the instruction does not ask to wait, go back, scroll, or change the page.",
+                "instructions": "Which single operation should be performed next to satisfy the instruction? Choose click, fill, or select only when the instruction acts on an offered element and the operation fits that element's role: click activates a link, button, checkbox, radio, option, menuitem, tab, or a combobox that opens a menu; fill enters text into a textbox, searchbox, or editable combobox; select chooses a value in a combobox or listbox. Choose fill or select only when value_keys lists a value. Choose scroll_down or scroll_up when the instruction asks to scroll, even if a link with a matching name is offered. Choose wait when the instruction asks to wait or the page is still loading. Choose done only when the page already shows the result and the instruction does not ask to wait, go back, scroll, or change the page.",
                 "criteria": operation_criteria(),
             }),
         );
@@ -506,7 +568,7 @@ impl DecisionRequest {
                 "target".to_string(),
                 json!({
                     "type": "choice",
-                    "instructions": "Which offered element should click, fill, or select act on? Ignore this question for other operations. Prefer the element whose role and name match the requested action, such as a button or link, over a nearby input field.",
+                    "instructions": "Which offered element should click, fill, or select act on? Ignore this question for other operations. Pick an element whose role fits the operation: click needs an element that activates on click, fill needs a textbox, searchbox, or editable combobox, and select needs a combobox or listbox. Prefer the element whose role and name match the requested action over a nearby input field.",
                     "criteria": Value::Object(criteria),
                 }),
             );
@@ -777,6 +839,21 @@ fn choice_answer(
     Ok((choice, probabilities, confidence))
 }
 
+fn state_candidate_supports(state: &Value, key: &str, operation: Operation) -> bool {
+    let candidate = state
+        .get("candidates")
+        .and_then(|candidates| candidates.get(key));
+    let role = candidate
+        .and_then(|candidate| candidate.get("role"))
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let activates = candidate
+        .and_then(|candidate| candidate.get("activates"))
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    operation_supports_role(operation, role, activates)
+}
+
 /// Validate a raw answer strictly against the offered options.
 pub fn validate_decision(
     decision_request: &DecisionRequest,
@@ -795,6 +872,11 @@ pub fn validate_decision(
     if decision_request.offered.target {
         let (choice, probabilities, confidence) = choice_answer(answers, "target", questions)?;
         if operation.needs_target() {
+            if !state_candidate_supports(&decision_request.state, &choice, operation) {
+                return Err(DecideError::InvalidAnswer(
+                    "The chosen target does not support the operation.".to_string(),
+                ));
+            }
             target = Some(choice);
             target_head = Some((probabilities, confidence));
         }
@@ -1314,6 +1396,7 @@ mod tests {
             backend_node_id: Some(1),
             frame_id: None,
             disabled: false,
+            opens_menu: false,
         }
     }
 
@@ -1352,19 +1435,21 @@ mod tests {
                     role: "button".to_string(),
                     name: "Submit".to_string(),
                     nth: None,
+                    activates: true,
                 },
                 Candidate {
                     key: "e2".to_string(),
                     role: "link".to_string(),
                     name: "Help".to_string(),
                     nth: None,
+                    activates: true,
                 },
             ],
             truncated: false,
         }
     }
 
-    fn answer(_head: &str, choice: &str, probabilities: Value) -> Value {
+    fn answer(choice: &str, probabilities: Value) -> Value {
         json!({
             "type": "choice",
             "choice": choice,
@@ -1373,14 +1458,59 @@ mod tests {
         })
     }
 
-    fn valid_answers(_request: &DecisionRequest) -> Value {
-        json!({
-            "operation": answer("operation", "click", json!({
-                "click": 0.9, "fill": 0.0, "select": 0.0, "scroll_down": 0.0,
-                "scroll_up": 0.0, "back": 0.0, "wait": 0.05, "done": 0.05
-            })),
-            "target": answer("target", "e1", json!({ "e1": 0.95, "e2": 0.05 })),
-        })
+    fn offered_keys(request: &DecisionRequest, head: &str) -> Vec<String> {
+        request.questions[head]["criteria"]
+            .as_object()
+            .map(|criteria| criteria.keys().cloned().collect())
+            .unwrap_or_default()
+    }
+
+    /// A distribution over the options actually offered for `head`.
+    fn probabilities(request: &DecisionRequest, head: &str, chosen: &str, weight: f64) -> Value {
+        let keys = offered_keys(request, head);
+        let single = keys.len() <= 1;
+        let others = keys.len().saturating_sub(1).max(1);
+        let mut map = Map::new();
+        for key in keys {
+            let value = if key == chosen {
+                if single {
+                    1.0
+                } else {
+                    weight
+                }
+            } else {
+                (1.0 - weight) / others as f64
+            };
+            map.insert(key, json!(value));
+        }
+        Value::Object(map)
+    }
+
+    fn textbox_input() -> DecisionInput {
+        DecisionInput {
+            instruction: "Fill the email address".to_string(),
+            url: "https://example.com".to_string(),
+            title: "Example".to_string(),
+            value_keys: vec![],
+            candidates: vec![Candidate {
+                key: "e1".to_string(),
+                role: "textbox".to_string(),
+                name: "Email address".to_string(),
+                nth: None,
+                activates: false,
+            }],
+            truncated: false,
+        }
+    }
+
+    fn valid_answers(request: &DecisionRequest) -> Value {
+        let mut answers = json!({
+            "operation": answer("click", probabilities(request, "operation", "click", 0.9)),
+        });
+        if request.offered.target {
+            answers["target"] = answer("e1", probabilities(request, "target", "e1", 0.95));
+        }
+        answers
     }
 
     #[test]
@@ -1498,6 +1628,7 @@ mod tests {
             role: "link".to_string(),
             name: "Read more".to_string(),
             nth: Some(1),
+            activates: true,
         };
         assert!(candidate.description().contains("occurrence 1"));
         let unique = Candidate {
@@ -1589,11 +1720,8 @@ mod tests {
     fn rejects_unknown_choice() {
         let request = DecisionRequest::build("jev-latest", &input(), false);
         let answers = json!({
-            "operation": answer("operation", "click", json!({
-                "click": 0.9, "fill": 0.0, "select": 0.0, "scroll_down": 0.0,
-                "scroll_up": 0.0, "back": 0.0, "wait": 0.05, "done": 0.05
-            })),
-            "target": answer("target", "e99", json!({ "e1": 0.5, "e2": 0.5 })),
+            "operation": answer("click", probabilities(&request, "operation", "click", 0.9)),
+            "target": answer("e99", probabilities(&request, "target", "e1", 0.5)),
         });
         assert!(matches!(
             validate_decision(&request, &answers),
@@ -1604,12 +1732,14 @@ mod tests {
     #[test]
     fn rejects_missing_option() {
         let request = DecisionRequest::build("jev-latest", &input(), false);
+        let mut operation = probabilities(&request, "operation", "click", 0.9)
+            .as_object()
+            .cloned()
+            .expect("probabilities");
+        operation.remove("done");
         let answers = json!({
-            "operation": answer("operation", "click", json!({
-                "click": 0.95, "fill": 0.0, "select": 0.0, "scroll_down": 0.0,
-                "scroll_up": 0.0, "back": 0.0, "wait": 0.05
-            })),
-            "target": answer("target", "e1", json!({ "e1": 0.95, "e2": 0.05 })),
+            "operation": answer("click", Value::Object(operation)),
+            "target": answer("e1", probabilities(&request, "target", "e1", 0.95)),
         });
         assert!(matches!(
             validate_decision(&request, &answers),
@@ -1620,12 +1750,14 @@ mod tests {
     #[test]
     fn rejects_bad_probability_sum() {
         let request = DecisionRequest::build("jev-latest", &input(), false);
+        let mut operation = Map::new();
+        for key in offered_keys(&request, "operation") {
+            operation.insert(key, json!(0.0));
+        }
+        operation.insert("click".to_string(), json!(0.5));
         let answers = json!({
-            "operation": answer("operation", "click", json!({
-                "click": 0.5, "fill": 0.0, "select": 0.0, "scroll_down": 0.0,
-                "scroll_up": 0.0, "back": 0.0, "wait": 0.0, "done": 0.0
-            })),
-            "target": answer("target", "e1", json!({ "e1": 0.95, "e2": 0.05 })),
+            "operation": answer("click", Value::Object(operation)),
+            "target": answer("e1", probabilities(&request, "target", "e1", 0.95)),
         });
         assert!(matches!(
             validate_decision(&request, &answers),
@@ -1637,11 +1769,8 @@ mod tests {
     fn rejects_choice_that_is_not_the_max() {
         let request = DecisionRequest::build("jev-latest", &input(), false);
         let answers = json!({
-            "operation": answer("operation", "click", json!({
-                "click": 0.9, "fill": 0.0, "select": 0.0, "scroll_down": 0.0,
-                "scroll_up": 0.0, "back": 0.0, "wait": 0.05, "done": 0.05
-            })),
-            "target": answer("target", "e1", json!({ "e1": 0.1, "e2": 0.9 })),
+            "operation": answer("click", probabilities(&request, "operation", "click", 0.1)),
+            "target": answer("e1", probabilities(&request, "target", "e1", 0.1)),
         });
         assert!(matches!(
             validate_decision(&request, &answers),
@@ -1655,10 +1784,7 @@ mod tests {
         input.candidates.clear();
         let request = DecisionRequest::build("jev-latest", &input, false);
         let answers = json!({
-            "operation": answer("operation", "click", json!({
-                "click": 0.9, "fill": 0.0, "select": 0.0, "scroll_down": 0.0,
-                "scroll_up": 0.0, "back": 0.0, "wait": 0.1, "done": 0.0
-            }))
+            "operation": answer("click", probabilities(&request, "operation", "click", 0.9)),
         });
         let decider = Arc::new(ScriptedDecider {
             answers: std::sync::Mutex::new(vec![Ok(answers)]),
@@ -1680,10 +1806,7 @@ mod tests {
         let request = DecisionRequest::build("jev-latest", &input, false);
         assert!(!request.offered.target);
         let answers = json!({
-            "operation": answer("operation", "click", json!({
-                "click": 0.9, "fill": 0.0, "select": 0.0, "scroll_down": 0.0,
-                "scroll_up": 0.0, "back": 0.0, "wait": 0.1, "done": 0.0
-            }))
+            "operation": answer("click", probabilities(&request, "operation", "click", 0.9)),
         });
         let decision = validate_decision(&request, &answers).unwrap();
         assert_eq!(decision.operation, Operation::Click);
@@ -1695,14 +1818,11 @@ mod tests {
     }
 
     #[test]
-    fn fill_without_a_supplied_value_is_blocked_not_an_error() {
-        let request = DecisionRequest::build("jev-latest", &input(), false);
+    fn fill_without_a_supplied_value_on_a_textbox_is_blocked_not_a_click() {
+        let request = DecisionRequest::build("jev-latest", &textbox_input(), false);
         let answers = json!({
-            "operation": answer("operation", "fill", json!({
-                "click": 0.05, "fill": 0.9, "select": 0.0, "scroll_down": 0.0,
-                "scroll_up": 0.0, "back": 0.0, "wait": 0.05, "done": 0.0
-            })),
-            "target": answer("target", "e1", json!({ "e1": 0.95, "e2": 0.05 })),
+            "operation": answer("fill", probabilities(&request, "operation", "fill", 0.9)),
+            "target": answer("e1", probabilities(&request, "target", "e1", 0.95)),
         });
         let decision = validate_decision(&request, &answers).unwrap();
         assert_eq!(decision.operation, Operation::Fill);
@@ -1712,6 +1832,29 @@ mod tests {
             .blocked_reason
             .as_deref()
             .is_some_and(|reason| reason.contains("caller-supplied value")));
+    }
+
+    #[test]
+    fn textbox_is_not_click_activatable() {
+        assert!(!role_activates_on_click("textbox", false));
+        assert!(!role_activates_on_click("searchbox", false));
+        assert!(role_activates_on_click("button", false));
+        assert!(role_activates_on_click("link", false));
+        assert!(!role_activates_on_click("combobox", false));
+        assert!(role_activates_on_click("combobox", true));
+    }
+
+    #[test]
+    fn click_on_a_textbox_is_not_an_offered_combination() {
+        let request = DecisionRequest::build("jev-latest", &textbox_input(), false);
+        let answers = json!({
+            "operation": answer("click", probabilities(&request, "operation", "click", 0.9)),
+            "target": answer("e1", probabilities(&request, "target", "e1", 0.95)),
+        });
+        assert!(matches!(
+            validate_decision(&request, &answers),
+            Err(DecideError::InvalidAnswer(_))
+        ));
     }
 
     struct ScriptedDecider {
@@ -1748,7 +1891,7 @@ mod tests {
     #[tokio::test]
     async fn retries_once_after_invalid_then_valid() {
         let request = DecisionRequest::build("jev-latest", &input(), false);
-        let bad = json!({ "operation": answer("operation", "nope", json!({ "nope": 1.0 })) });
+        let bad = json!({ "operation": answer("nope", json!({ "nope": 1.0 })) });
         let decider = Arc::new(ScriptedDecider {
             answers: std::sync::Mutex::new(vec![Ok(bad), Ok(valid_answers(&request))]),
             calls: std::sync::atomic::AtomicUsize::new(0),
@@ -1761,7 +1904,7 @@ mod tests {
     #[tokio::test]
     async fn invalid_twice_is_an_error() {
         let request = DecisionRequest::build("jev-latest", &input(), false);
-        let bad = json!({ "operation": answer("operation", "nope", json!({ "nope": 1.0 })) });
+        let bad = json!({ "operation": answer("nope", json!({ "nope": 1.0 })) });
         let decider = Arc::new(ScriptedDecider {
             answers: std::sync::Mutex::new(vec![Ok(bad.clone()), Ok(bad)]),
             calls: std::sync::atomic::AtomicUsize::new(0),
