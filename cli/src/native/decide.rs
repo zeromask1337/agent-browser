@@ -196,6 +196,10 @@ pub struct CandidateInput {
     pub backend_node_id: Option<i64>,
     /// Refs from another frame are not measurable from the active page session.
     pub frame_id: Option<String>,
+    /// Set by the rendering probe for the `disabled` attribute,
+    /// `aria-disabled="true"`, or a disabled fieldset ancestor. A disabled
+    /// control cannot be activated or edited, so it is never offered.
+    pub disabled: bool,
 }
 
 /// Viewport-relative rectangle in CSS pixels.
@@ -217,8 +221,9 @@ pub struct CandidateSet {
 /// Keep rendered, actionable refs in DOM order and cap the list.
 ///
 /// `rendered` maps a candidate key to its rectangle when the element passed the
-/// rendering probe. A key that is absent is not rendered. Offscreen elements
-/// are included; an interaction scrolls the chosen ref into view before it runs.
+/// rendering probe. A key that is absent is not rendered. Disabled controls are
+/// dropped because they cannot be activated or edited. Offscreen elements are
+/// included; an interaction scrolls the chosen ref into view before it runs.
 pub fn assemble_candidates(
     inputs: &[CandidateInput],
     rendered: &HashMap<String, Rect>,
@@ -228,6 +233,7 @@ pub fn assemble_candidates(
         .iter()
         .filter(|input| CANDIDATE_ROLES.contains(&input.role.as_str()))
         .filter(|input| input.frame_id.is_none())
+        .filter(|input| !input.disabled)
         .filter(|input| rendered.contains_key(&input.key))
         .collect();
 
@@ -277,8 +283,18 @@ pub fn fingerprint(url: &str, candidates: &[Candidate], visible: &HashMap<String
     hex::encode(&digest[..8])
 }
 
-/// Read every element's viewport rectangle in one page evaluation, then map the
-/// tagged elements back to backend node ids in one DOM call.
+/// One rendered element measured by [`probe_rendered_elements`].
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RenderedElement {
+    pub rect: Rect,
+    /// True for the `disabled` attribute, `aria-disabled="true"`, or an
+    /// element inside a disabled fieldset.
+    pub disabled: bool,
+}
+
+/// Read every element's viewport rectangle and disabled state in one page
+/// evaluation, then map the tagged elements back to backend node ids in one DOM
+/// call.
 ///
 /// Elements are included when they are rendered, not only when they intersect
 /// the current viewport. Ref interactions scroll the element into view before
@@ -287,10 +303,10 @@ pub fn fingerprint(url: &str, candidates: &[Candidate], visible: &HashMap<String
 ///
 /// The page is tagged with `data-ab-cand` the same way the snapshot tags
 /// cursor-interactive elements. No CDP call is made per candidate.
-pub async fn probe_rendered_rects(
+pub async fn probe_rendered_elements(
     client: &CdpClient,
     session_id: &str,
-) -> Result<HashMap<i64, Rect>, String> {
+) -> Result<HashMap<i64, RenderedElement>, String> {
     let js = r#"
 (function() {
     var out = [];
@@ -303,7 +319,15 @@ pub async fn probe_rendered_rects(
         var rendered = r.width > 0 && r.height > 0 &&
             cs.display !== 'none' && cs.visibility !== 'hidden' &&
             cs.visibility !== 'collapse';
-        out.push({ x: r.x, y: r.y, w: r.width, h: r.height, rendered: rendered });
+        // :disabled covers the attribute and a disabled fieldset ancestor.
+        // ARIA allows a custom control to be disabled without the attribute.
+        var disabled = false;
+        try { disabled = el.matches(':disabled'); } catch (e) {}
+        if (!disabled && el.getAttribute) {
+            var aria = el.getAttribute('aria-disabled');
+            disabled = aria !== null && aria.toLowerCase() === 'true';
+        }
+        out.push({ x: r.x, y: r.y, w: r.width, h: r.height, rendered: rendered, disabled: disabled });
     }
     return out;
 })()
@@ -343,14 +367,14 @@ pub async fn probe_rendered_rects(
         )
         .await?;
 
-    let mut by_backend: HashMap<i64, Rect> = HashMap::new();
+    let mut by_backend: HashMap<i64, RenderedElement> = HashMap::new();
     if let Some(root) = doc.get("root") {
-        collect_tagged_rects(root, &rects, &mut by_backend);
+        collect_tagged_elements(root, &rects, &mut by_backend);
     }
     Ok(by_backend)
 }
 
-fn collect_tagged_rects(node: &Value, rects: &[Value], out: &mut HashMap<i64, Rect>) {
+fn collect_tagged_elements(node: &Value, rects: &[Value], out: &mut HashMap<i64, RenderedElement>) {
     if node.get("nodeType").and_then(|v| v.as_i64()) == Some(1) {
         let index = node
             .get("attributes")
@@ -374,11 +398,17 @@ fn collect_tagged_rects(node: &Value, rects: &[Value], out: &mut HashMap<i64, Re
                 if rendered {
                     out.insert(
                         backend,
-                        Rect {
-                            x: rect.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0),
-                            y: rect.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0),
-                            width: rect.get("w").and_then(|v| v.as_f64()).unwrap_or(0.0),
-                            height: rect.get("h").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                        RenderedElement {
+                            rect: Rect {
+                                x: rect.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                                y: rect.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                                width: rect.get("w").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                                height: rect.get("h").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                            },
+                            disabled: rect
+                                .get("disabled")
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(false),
                         },
                     );
                 }
@@ -387,11 +417,11 @@ fn collect_tagged_rects(node: &Value, rects: &[Value], out: &mut HashMap<i64, Re
     }
     if let Some(children) = node.get("children").and_then(|v| v.as_array()) {
         for child in children {
-            collect_tagged_rects(child, rects, out);
+            collect_tagged_elements(child, rects, out);
         }
     }
     if let Some(content) = node.get("contentDocument") {
-        collect_tagged_rects(content, rects, out);
+        collect_tagged_elements(content, rects, out);
     }
 }
 
@@ -407,6 +437,7 @@ pub fn candidate_inputs(ref_map: &super::element::RefMap) -> Vec<CandidateInput>
             nth: entry.nth,
             backend_node_id: entry.backend_node_id,
             frame_id: entry.frame_id,
+            disabled: false,
         })
         .collect()
 }
@@ -1282,6 +1313,14 @@ mod tests {
             nth,
             backend_node_id: Some(1),
             frame_id: None,
+            disabled: false,
+        }
+    }
+
+    fn disabled_candidate(key: &str, role: &str, name: &str) -> CandidateInput {
+        CandidateInput {
+            disabled: true,
+            ..candidate(key, role, name, None)
         }
     }
 
@@ -1398,6 +1437,30 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec!["e1", "e2"]
         );
+    }
+
+    #[test]
+    fn candidates_skip_disabled_elements() {
+        // One input per condition the rendering probe normalizes into the flag:
+        // the disabled attribute, aria-disabled="true", and a control inside a
+        // disabled fieldset. None of them can be activated or edited.
+        let inputs = vec![
+            candidate("e1", "button", "Publish report", None),
+            disabled_candidate("e2", "button", "Delete report"),
+            disabled_candidate("e3", "checkbox", "Remember me"),
+            disabled_candidate("e4", "textbox", "Email"),
+            candidate("e5", "link", "Help", None),
+        ];
+        let visible = rects(&["e1", "e2", "e3", "e4", "e5"]);
+        let set = assemble_candidates(&inputs, &visible, MAX_CANDIDATES);
+        assert_eq!(
+            set.candidates
+                .iter()
+                .map(|candidate| candidate.key.as_str())
+                .collect::<Vec<_>>(),
+            vec!["e1", "e5"]
+        );
+        assert!(!set.truncated);
     }
 
     #[test]
