@@ -16,6 +16,8 @@ The labels were written from each page's element list and from the instruction i
 
 The case and fixture bytes were committed before the live run. The commit that adds this directory is the freeze commit. After the live run, labels, fixtures, instructions, candidate construction, prompts, and criteria stay unchanged. Failures are reported, not tuned away. There are no excluded cases: every generated case is part of the denominator.
 
+Freeze commit: `862091621c05f8bee52fadb7b0b9e877b3d397fd`.
+
 ## Page archetypes
 
 The pages cover authentication, commerce catalog, checkout, admin settings, documentation search, travel search, finance dashboard, media player, data table pagination, modal dialog, long article, support ticket, profile editing, analytics, billing, and an onboarding wizard. Each page varies element order, duplicate distractor names, disabled controls, below-fold targets, and forms with supplied or missing values.
