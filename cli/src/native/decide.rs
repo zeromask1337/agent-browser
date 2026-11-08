@@ -159,9 +159,11 @@ fn operation_criteria(include_wait: bool) -> Value {
 
 /// Words that make a wait legitimate even when the instruction also names an
 /// offered element. Matched by prefix so "waiting", "settles", and "loaded"
-/// count.
+/// count. The bare noun "load" is not a cue: "Find loads" and "Load details"
+/// are targets, not waits.
 const WAIT_CUES: &[&str] = &[
-    "wait", "settl", "load", "appear", "finish", "complet", "ready", "until", "spinner", "delay",
+    "wait", "settl", "loading", "loaded", "appear", "finish", "complet", "ready", "until",
+    "spinner", "delay",
 ];
 
 fn instruction_requests_wait(instruction: &str) -> bool {
@@ -181,7 +183,7 @@ fn normalized_words(text: &str) -> Vec<String> {
 }
 
 /// Whether the instruction names this candidate's accessible name.
-fn instruction_names_candidate(instruction: &str, name: &str) -> bool {
+pub(crate) fn instruction_names_candidate(instruction: &str, name: &str) -> bool {
     let name_words = normalized_words(name);
     if name_words.is_empty() {
         return false;

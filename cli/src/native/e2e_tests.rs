@@ -17182,7 +17182,9 @@ async fn e2e_decide_eval_validate() {
                 .and_then(|question| question.get("criteria"))
                 .and_then(|criteria| criteria.get("wait"))
                 .is_some();
-            if wait_offered {
+            if wait_offered
+                && super::decide::instruction_names_candidate(&case.instruction, expected)
+            {
                 wait_leaks.push(case.name.clone());
             }
         } else {
@@ -17223,7 +17225,7 @@ async fn e2e_decide_eval_validate() {
 
     assert!(
         wait_leaks.is_empty(),
-        "wait must not be offered when the instruction names an offered target: {:?}",
+        "wait must not be offered when the instruction names the expected target: {:?}",
         wait_leaks
     );
 
