@@ -144,9 +144,9 @@ agent-browser find nth 2 ".card" hover
 agent-browser act "<instruction>" [--dry-run] [--min-confidence <0..1>] [--value <key>=<value>]...
 ```
 
-The operation set is `click`, `fill`, `select`, `scroll_down`, `scroll_up`, `back`, `wait`, and `done`. A target is required for `click`, `fill`, and `select`. The decider can only return an offered ref, so an answer outside the candidate set runs nothing.
+The operation set is `click`, `fill`, `select`, `scroll_down`, `scroll_up`, `back`, and `wait`. There is no `done` operation: `act` is one caller-owned step, so a page that already shows the result is not a decision `act` makes. `back` is browser history; a visible Back, Return, or Previous control is a click target and is chosen only when the instruction names that control. A target is required for `click`, `fill`, and `select`. The decider can only return an offered ref, so an answer outside the candidate set runs nothing.
 
-Disabled elements are never offered: the `disabled` attribute, `aria-disabled="true"`, and controls inside a disabled fieldset are dropped before the decision. `click` is offered only for link, button, checkbox, radio, option, menuitem, tab, and a combobox that opens a menu. Textboxes and searchboxes take `fill`, so a click on one is rejected and a fill with no supplied value is blocked instead of turning into a click. `wait` is offered only when the instruction asks to wait, settle, load, or wait for a condition to appear, or when no offered element matches a target named in the instruction.
+Disabled elements are never offered: the `disabled` attribute, `aria-disabled="true"`, and controls inside a disabled fieldset are dropped before the decision. `click` is offered only for link, button, checkbox, radio, option, menuitem, tab, and a combobox that opens a menu. Textboxes and searchboxes take `fill`, so a click on one is blocked with a reason instead of running. A fill or select with no supplied value is blocked instead of turning into a click. A history request that does not name a visible control does not offer target-taking operations, so a nearby Return or Previous link cannot answer it. `wait` is offered only when the instruction asks to wait, settle, load, or wait for a condition to appear, or when no offered element matches a target named in the instruction.
 
 <table>
   <thead>
@@ -173,7 +173,7 @@ agent-browser act "Click Submit" --min-confidence 0.8
 
 Set `AGENT_BROWSER_DECIDER` to `jev` or `llm`. There is no auto-selection. `jev` requires `TYPESAFE_API_KEY`; `llm` uses the same AI Gateway key as `chat`.
 
-The result reports `status`, `operation`, `target`, `valueKey`, `confidence`, `probabilities`, and `fingerprint`. Status is `executed`, `done`, `blocked`, or `stale`; `dry_run` is reported when no action ran. When the chosen operation needs a target or value that was not offered, status is `blocked` and `reason` explains why. Nothing runs in that case. The target ref is checked again before it runs. If the page changed after the decision, `act` decides once more; if it changed again, it returns `stale` and runs nothing.
+The result reports `status`, `operation`, `target`, `valueKey`, `confidence`, `probabilities`, and `fingerprint`. Status is `executed`, `blocked`, or `stale`; `dry_run` is reported when no action ran. When the chosen operation needs a target or value that was not offered, or the chosen target's role cannot carry out the chosen operation, status is `blocked` and `reason` explains why. Nothing runs in that case, and a role mismatch is not retried as an invalid answer. The target ref is checked again before it runs. If the page changed after the decision, `act` decides once more; if it changed again, it returns `stale` and runs nothing.
 
 ## Wait
 

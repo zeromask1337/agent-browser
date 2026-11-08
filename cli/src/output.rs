@@ -977,7 +977,6 @@ fn print_primary_response(resp: &Response, action: Option<&str>, opts: &OutputOp
                 .unwrap_or(0.0);
             let value_key = data.get("valueKey").and_then(|v| v.as_str()).unwrap_or("");
             match status {
-                "done" => println!("{} Done: nothing to run", color::success_indicator()),
                 "blocked" => {
                     if let Some(reason) = data.get("reason").and_then(|v| v.as_str()) {
                         println!("{} Blocked: {}", color::warning_indicator(), reason);
@@ -2250,14 +2249,18 @@ Asks a decider to pick one operation and one rendered target from the current
 snapshot, then runs it. Run snapshot first so refs exist, and snapshot again
 after the page changes. Elements outside the viewport are included because an
 action scrolls the chosen ref into view before it runs. The operation set is
-click, fill, select, scroll_down, scroll_up, back, wait, and done.
+click, fill, select, scroll_down, scroll_up, back, and wait. There is no done
+operation: act is one caller-owned step, so a page that already shows the
+result is not a decision act makes.
 
 The decider only sees the instruction, the page URL and title, candidate role
 and accessible name, and caller-supplied value key names. It never sees input
 values, passwords, cookies, storage, or auth vault entries. A chosen ref is
 re-validated against the page before it runs; if the page moved twice, act
 returns status stale and runs nothing. If the decision needs a target or value
-that was not offered, act returns status blocked with a reason and runs nothing.
+that was not offered, or the chosen target's role cannot carry out the chosen
+operation, act returns status blocked with a reason and runs nothing. A target
+role mismatch is blocked, never retried as an invalid answer.
 
 Options:
   --dry-run              Return the proposal without running it

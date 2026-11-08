@@ -11,7 +11,9 @@ Run `snapshot` first. `act` offers refs from the current snapshot and does not c
 
 ## Operations
 
-The decider picks one of `click`, `fill`, `select`, `scroll_down`, `scroll_up`, `back`, `wait`, and `done`. `click`, `fill`, and `select` need a target. `scroll_down` and `scroll_up` move 600 px. `wait` pauses for 500 ms. `done` means the instruction is already satisfied.
+The decider picks one of `click`, `fill`, `select`, `scroll_down`, `scroll_up`, `back`, and `wait`. `click`, `fill`, and `select` need a target. `scroll_down` and `scroll_up` move 600 px. `wait` pauses for 500 ms. There is no `done` operation: `act` is one caller-owned step, so a page that already shows the result is not a decision `act` makes.
+
+`back` is browser history. A visible Back, Return, or Previous link or button is an in-page control: it is clicked only when the instruction names that control. When the instruction asks for the previous page or the page it came from, target-taking operations are not offered, so a nearby return link cannot win.
 
 `wait` is offered only when the instruction asks to wait, settle, load, or wait for a condition to appear, or when no offered element matches a target named in the instruction. When the instruction names an offered target, `wait` is not in the operation set, so the decider has to act on that target or report a different operation.
 
@@ -34,8 +36,7 @@ The decider sees the value key names, never the values. It chooses which key goe
   </thead>
   <tbody>
     <tr><td><code>executed</code></td><td>The chosen action ran. <code>result</code> holds the action output.</td></tr>
-    <tr><td><code>done</code></td><td>The instruction was already satisfied. Nothing ran.</td></tr>
-    <tr><td><code>blocked</code></td><td>Confidence was below <code>--min-confidence</code>, or the chosen operation needs a target or value that was not offered. <code>reason</code> explains the second case. Nothing ran.</td></tr>
+    <tr><td><code>blocked</code></td><td>Confidence was below <code>--min-confidence</code>, the chosen operation needs a target or value that was not offered, or the chosen target's role cannot carry out the operation. <code>reason</code> explains the latter cases. Nothing ran.</td></tr>
     <tr><td><code>stale</code></td><td>The page changed after two decisions. Nothing ran.</td></tr>
     <tr><td><code>dry_run</code></td><td>A proposal was returned and nothing ran.</td></tr>
   </tbody>
@@ -49,7 +50,7 @@ Only rendered, actionable elements are offered: link, button, textbox, searchbox
 
 Disabled elements are never offered. The `disabled` attribute, `aria-disabled="true"`, and controls inside a disabled fieldset are dropped before the decision, because none of them can be activated or edited.
 
-Roles are also matched to operations. `click` is offered only for link, button, checkbox, radio, option, menuitem, tab, and a combobox that opens a menu. Textboxes and searchboxes take `fill`, so a click on one is rejected as an invalid answer and a fill with no supplied value is blocked instead of turning into a click. `fill` targets a textbox, searchbox, or editable combobox. `select` targets a combobox or listbox.
+Roles are also matched to operations. `click` is offered only for link, button, checkbox, radio, option, menuitem, tab, and a combobox that opens a menu. Textboxes and searchboxes take `fill`, so a click on one is blocked with a reason and a fill or select with no supplied value is blocked instead of turning into a click. `fill` targets a textbox, searchbox, or editable combobox. `select` targets a combobox or listbox. The state lists each candidate's supported operations, and an unsupported operation/target pairing is blocked, not retried.
 
 Unusual answers are contained. A choice outside the offered options, a probability set that does not cover the offered options, or a choice that is not the most likely option fails validation. `act` retries once, and a second invalid answer is an error; nothing runs.
 

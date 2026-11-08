@@ -224,7 +224,7 @@ agent-browser act "Click Submit" --dry-run
 agent-browser act "Click Submit" --min-confidence 0.8
 ```
 
-`AGENT_BROWSER_DECIDER` is required: `jev` (needs `TYPESAFE_API_KEY`) or `llm` (needs `AI_GATEWAY_API_KEY`). The decider sees value key names but never values, and it can only return an offered ref. Status is `executed`, `done`, `blocked`, `stale`, or `dry_run`. Details: `references/act.md`.
+`AGENT_BROWSER_DECIDER` is required: `jev` (needs `TYPESAFE_API_KEY`) or `llm` (needs `AI_GATEWAY_API_KEY`). The decider sees value key names but never values, and it can only return an offered ref. Status is `executed`, `blocked`, `stale`, or `dry_run`. Details: `references/act.md`.
 
 ## Browser Settings
 
