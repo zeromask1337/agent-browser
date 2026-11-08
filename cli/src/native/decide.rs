@@ -127,11 +127,11 @@ fn operation_criteria() -> Value {
     criteria.insert("click".to_string(), json!("Click the target element once."));
     criteria.insert(
         "fill".to_string(),
-        json!("Enter one caller-supplied value into the target field."),
+        json!("Enter one caller-supplied value into the target field. Choose fill only when value_keys names a value to enter."),
     );
     criteria.insert(
         "select".to_string(),
-        json!("Choose one caller-supplied value in the target dropdown."),
+        json!("Choose one caller-supplied value in the target dropdown. Choose select only when value_keys names a value to choose."),
     );
     criteria.insert(
         "scroll_down".to_string(),
@@ -141,14 +141,17 @@ fn operation_criteria() -> Value {
         "scroll_up".to_string(),
         json!("Scroll the page up to reveal earlier content."),
     );
-    criteria.insert("back".to_string(), json!("Go back in the browser history."));
+    criteria.insert(
+        "back".to_string(),
+        json!("Go back to the previous page in browser history. Choose back for an instruction about the page before this one, even when the page also shows a link or button named Previous page."),
+    );
     criteria.insert(
         "wait".to_string(),
-        json!("Wait briefly for the page to settle, then look again."),
+        json!("Wait for the page to finish loading or settle, then look again. Choose wait whenever the instruction asks to wait, even if the page already looks loaded."),
     );
     criteria.insert(
         "done".to_string(),
-        json!("The instruction is already satisfied, so no action is needed."),
+        json!("The result the instruction asks for is already visible on the page, so no action is needed. Do not choose done when the instruction asks to wait, to go back, or to change the page."),
     );
     Value::Object(criteria)
 }
@@ -448,7 +451,7 @@ impl DecisionRequest {
             "operation".to_string(),
             json!({
                 "type": "choice",
-                "instructions": "Which single operation should be performed next to satisfy the instruction? Use done only when the page already shows the result.",
+                "instructions": "Which single operation should be performed next to satisfy the instruction? Choose click, fill, or select only when the instruction acts on an offered element. Choose fill or select only when value_keys lists a value. Choose wait when the instruction asks to wait or the page is still loading. Choose done only when the page already shows the result and the instruction does not ask to wait, go back, or change the page.",
                 "criteria": operation_criteria(),
             }),
         );
@@ -462,7 +465,7 @@ impl DecisionRequest {
                 "target".to_string(),
                 json!({
                     "type": "choice",
-                    "instructions": "Which offered element should click, fill, or select act on? Ignore this question for other operations.",
+                    "instructions": "Which offered element should click, fill, or select act on? Ignore this question for other operations. Prefer the element whose role and name match the requested action, such as a button or link, over a nearby input field.",
                     "criteria": Value::Object(criteria),
                 }),
             );
@@ -1424,6 +1427,34 @@ mod tests {
     fn request_omits_value_head_when_not_supplied() {
         let request = DecisionRequest::build("jev-latest", &input(), false);
         assert!(request.questions.get("value_key").is_none());
+    }
+
+    #[test]
+    fn operation_criteria_distinguish_wait_done_and_history_back() {
+        let request = DecisionRequest::build("jev-latest", &input(), false);
+        let criteria = request.questions["operation"]["criteria"]
+            .as_object()
+            .expect("operation criteria");
+        let text = |key: &str| {
+            criteria
+                .get(key)
+                .and_then(|value| value.as_str())
+                .unwrap_or_default()
+                .to_lowercase()
+        };
+        assert!(text("wait").contains("instruction asks to wait"));
+        assert!(text("wait").contains("finish loading"));
+        assert!(text("done").contains("do not choose done when the instruction asks to wait"));
+        assert!(text("back").contains("browser history"));
+        assert!(text("back").contains("previous page"));
+        assert!(text("fill").contains("value_keys"));
+        assert!(text("select").contains("value_keys"));
+        let instructions = request.questions["operation"]["instructions"]
+            .as_str()
+            .unwrap_or_default()
+            .to_lowercase();
+        assert!(instructions.contains("value_keys"));
+        assert!(instructions.contains("wait"));
     }
 
     #[test]
